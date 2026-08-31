@@ -1,0 +1,51 @@
+{
+  "track_id": "REPLACE_WITH_REAL_FILEID_UUID",
+  "display_name": "Zemlya",
+  "arrangements": [
+    {
+      "name": "Full Band",
+      "required_instruments": {
+        "mimi:elecguitar": 1,
+        "mimi:bassguitar": 1,
+        "mimi:drums": 1
+      },
+      "effects": [
+        { "effect": "minecraft:regeneration", "base_level": 1, "max_level": 3 },
+        { "effect": "minecraft:absorption", "base_level": 0, "max_level": 2 }
+      ],
+      "affects": "all_nearby",
+      "radius": 15
+    },
+    {
+      "name": "Acoustic Duo",
+      "required_instruments": {
+        "mimi:acguitar": 1,
+        "mimi:violin": 1
+      },
+      "effects": [
+        { "effect": "minecraft:regeneration", "base_level": 1, "max_level": 2 }
+      ],
+      "affects": "all_nearby",
+      "radius": 15
+    },
+    {
+      "name": "Solo",
+      "required_instruments": {
+        "mimi:acguitar": 1
+      },
+      "effects": [
+        { "effect": "minecraft:regeneration", "base_level": 1, "max_level": 1 }
+      ],
+      "affects": "ensemble",
+      "radius": 15
+    }
+  ],
+  "mob_purge": {
+    "radius_blocks": 128,
+    "requires_static_instrument": true,
+    "environment": "surface",
+    "hostile_only": true,
+    "purge_interval_ticks": 20,
+    "silent": false
+  }
+}

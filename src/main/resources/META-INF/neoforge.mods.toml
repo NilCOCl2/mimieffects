@@ -1,0 +1,39 @@
+modLoader = "javafml"
+loaderVersion = "[4,)"
+license = "MIT"
+issueTrackerURL = ""
+
+[[mods]]
+modId = "mimieffects"
+version = "${file.jarVersion}"
+displayName = "MimiEffects"
+description = '''
+Аддон к MIMI: превращает совместную игру на инструментах в баффы для
+окружающих игроков, в зависимости от MIDI-трека и состава "оркестра".
+'''
+authors = "TBD"
+
+[[dependencies.mimieffects]]
+    modId = "neoforge"
+    type = "required"
+    versionRange = "[21.1,)"
+    ordering = "NONE"
+    side = "BOTH"
+
+[[dependencies.mimieffects]]
+    modId = "minecraft"
+    type = "required"
+    versionRange = "[1.21.1,1.21.2)"
+    ordering = "NONE"
+    side = "BOTH"
+
+# MIMI itself — real modId confirmed as "mimi" from source (MIMIMod.MODID).
+# Version scheme is unusual ("1.21.1-4.2.0-neo"), so leave versionRange loose
+# here rather than guess a comparator NeoForge might parse wrong; tighten
+# this once you've actually loaded both mods together once.
+[[dependencies.mimieffects]]
+    modId = "mimi"
+    type = "required"
+    versionRange = "[0,)"
+    ordering = "AFTER"
+    side = "BOTH"

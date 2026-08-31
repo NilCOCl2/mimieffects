@@ -1,0 +1,15 @@
+{
+  "track_id": null,
+  "display_name": "Impровизация",
+  "arrangements": [
+    {
+      "name": "Any Duo+",
+      "required_instruments": {},
+      "min_instrument_count": 2,
+      "effects": [
+        { "effect": "minecraft:luck", "base_level": 0, "max_level": 1 }
+      ],
+      "affects": "all_nearby"
+    }
+  ]
+}

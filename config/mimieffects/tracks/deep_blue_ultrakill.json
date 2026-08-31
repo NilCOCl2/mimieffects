@@ -1,0 +1,25 @@
+{
+  "track_id": "REPLACE_WITH_REAL_FILEID_UUID",
+  "display_name": "Deep Blue (ULTRAKILL)",
+  "arrangements": [
+    {
+      "name": "Solo Piano",
+      "required_instruments": {
+        "mimi:piano": 1
+      },
+      "effects": [
+        { "effect": "minecraft:water_breathing", "base_level": 0, "max_level": 0 }
+      ],
+      "affects": "all_nearby",
+      "radius": 15
+    }
+  ],
+  "mob_purge": {
+    "radius_blocks": 128,
+    "requires_static_instrument": true,
+    "environment": "underwater",
+    "hostile_only": true,
+    "purge_interval_ticks": 20,
+    "silent": false
+  }
+}
