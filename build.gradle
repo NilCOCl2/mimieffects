@@ -17,6 +17,21 @@ base {
 
 java.toolchain.languageVersion = JavaLanguageVersion.of(21)
 
+// FIX (2026-09-01): без этого javac на Windows компилирует .java-файлы в
+// системной кодировке (обычно CP1251/CP1252), а не UTF-8 — кириллица в
+// строковых литералах (сообщения команд, комментарии) превращается в
+// "PsCPpc'sPSPC..." прямо на этапе компиляции. Актуально для любого
+// текста на не-английском языке в исходниках, не только для команд.
+tasks.withType(JavaCompile).configureEach {
+    options.encoding = 'UTF-8'
+}
+tasks.withType(Javadoc).configureEach {
+    options.encoding = 'UTF-8'
+}
+tasks.withType(ProcessResources).configureEach {
+    filteringCharset = 'UTF-8'
+}
+
 repositories {
     mavenLocal()
     // MIMI (the mod this addon depends on) is published here — see

@@ -1,0 +1,29 @@
+{
+  "mimieffects.configuration.general": "Общее",
+  "mimieffects.configuration.general.base_radius": "Радиус оркестра (блоков)",
+  "mimieffects.configuration.general.tick_interval": "Интервал обновления (тиков)",
+  "mimieffects.configuration.general.session_timeout_seconds": "Таймаут сессии (секунд)",
+
+  "mimieffects.configuration.scaling": "Масштабирование",
+  "mimieffects.configuration.scaling.per_player_bonus": "Бонус за игрока",
+  "mimieffects.configuration.scaling.full_ensemble_bonus": "Бонус за полный ансамбль",
+
+  "mimieffects.configuration.dissonance": "Диссонанс",
+  "mimieffects.configuration.dissonance.behavior": "Поведение при диссонансе",
+  "mimieffects.configuration.dissonance.reduce_by_levels": "Понижение уровня при диссонансе",
+
+  "mimieffects.configuration.defaults": "Значения по умолчанию",
+  "mimieffects.configuration.defaults.affects": "Кого охватывать по умолчанию",
+  "mimieffects.configuration.defaults.duration_seconds": "Длительность эффекта по умолчанию (сек)",
+
+  "mimieffects.command.reload.success": "[MimiEffects] Загружено треков: %s. Новых заготовок создано: %s.",
+  "mimieffects.command.reload.load_failed": "[MimiEffects] Не удалось создать/прочитать %s: %s",
+  "mimieffects.command.reload.scaffold_failed": "[MimiEffects] Автосоздание заготовок не удалось: %s",
+  "mimieffects.command.gui.failed": "[MimiEffects] Не удалось открыть редактор: %s",
+
+  "mimieffects.editor.error.no_permission": "[MimiEffects] Недостаточно прав для сохранения (нужен уровень OP 2+).",
+  "mimieffects.editor.error.bad_filename": "[MimiEffects] Некорректное имя файла.",
+  "mimieffects.editor.error.empty": "[MimiEffects] Пустой JSON — сохранение отменено.",
+  "mimieffects.editor.error.invalid_json": "[MimiEffects] Некорректный JSON — сохранение отменено, старый файл не тронут.",
+  "mimieffects.editor.error.io": "[MimiEffects] Ошибка записи файла на сервере (см. лог сервера)."
+}

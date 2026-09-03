@@ -1,0 +1,29 @@
+{
+  "mimieffects.configuration.general": "General",
+  "mimieffects.configuration.general.base_radius": "Ensemble radius (blocks)",
+  "mimieffects.configuration.general.tick_interval": "Update interval (ticks)",
+  "mimieffects.configuration.general.session_timeout_seconds": "Session timeout (seconds)",
+
+  "mimieffects.configuration.scaling": "Scaling",
+  "mimieffects.configuration.scaling.per_player_bonus": "Per-player bonus",
+  "mimieffects.configuration.scaling.full_ensemble_bonus": "Full ensemble bonus",
+
+  "mimieffects.configuration.dissonance": "Dissonance",
+  "mimieffects.configuration.dissonance.behavior": "Dissonance behavior",
+  "mimieffects.configuration.dissonance.reduce_by_levels": "Dissonance level reduction",
+
+  "mimieffects.configuration.defaults": "Defaults",
+  "mimieffects.configuration.defaults.affects": "Default affected group",
+  "mimieffects.configuration.defaults.duration_seconds": "Default effect duration (sec)",
+
+  "mimieffects.command.reload.success": "[MimiEffects] Tracks loaded: %s. New stubs created: %s.",
+  "mimieffects.command.reload.load_failed": "[MimiEffects] Failed to create/read %s: %s",
+  "mimieffects.command.reload.scaffold_failed": "[MimiEffects] Auto-scaffolding failed: %s",
+  "mimieffects.command.gui.failed": "[MimiEffects] Failed to open editor: %s",
+
+  "mimieffects.editor.error.no_permission": "[MimiEffects] Insufficient permissions to save (needs OP level 2+).",
+  "mimieffects.editor.error.bad_filename": "[MimiEffects] Invalid file name.",
+  "mimieffects.editor.error.empty": "[MimiEffects] Empty JSON — save cancelled.",
+  "mimieffects.editor.error.invalid_json": "[MimiEffects] Invalid JSON — save cancelled, old file untouched.",
+  "mimieffects.editor.error.io": "[MimiEffects] Server-side file write error (see server log)."
+}
