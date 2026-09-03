@@ -3,6 +3,9 @@ loaderVersion = "[4,)"
 license = "MIT"
 issueTrackerURL = ""
 
+[[mixins]]
+config = "mimieffects.mixins.json"
+
 [[mods]]
 modId = "mimieffects"
 version = "${file.jarVersion}"

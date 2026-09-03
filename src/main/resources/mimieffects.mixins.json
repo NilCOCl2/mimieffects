@@ -1,0 +1,7 @@
+{
+  "required": true,
+  "package": "com.mimieffects.mixin",
+  "compatibilityLevel": "JAVA_21",
+  "mixins": ["ServerNoteConsumerManagerMixin"],
+  "injectors": {"defaultRequire": 1}
+}

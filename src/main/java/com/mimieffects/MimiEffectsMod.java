@@ -3,7 +3,9 @@ package com.mimieffects;
 import com.mimieffects.command.MimiEffectsCommands;
 import com.mimieffects.config.GlobalConfig;
 import com.mimieffects.network.NetworkRegistration;
+import com.mimieffects.track.TrackLoader;
 import com.mimieffects.track.TrackRegistry;
+import com.mimieffects.track.TrackScaffolder;
 
 import net.neoforged.bus.api.IEventBus;
 import net.neoforged.fml.ModContainer;
@@ -11,11 +13,13 @@ import net.neoforged.fml.common.Mod;
 import net.neoforged.fml.config.ModConfig;
 import net.neoforged.fml.loading.FMLPaths;
 import net.neoforged.neoforge.common.NeoForge;
+import net.neoforged.neoforge.event.server.ServerStartingEvent;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.nio.file.Path;
+import java.io.IOException;
 
 /**
  * The mod's actual entry point.
@@ -54,6 +58,7 @@ public final class MimiEffectsMod {
         // not the mod bus — this is what actually gives you "/mimieffects
         // reload" in-game, which was the other missing piece.
         NeoForge.EVENT_BUS.addListener(MimiEffectsCommands::onRegisterCommands);
+        NeoForge.EVENT_BUS.addListener(this::onServerStarting);
 
         // Server-bound (playToServer) network registration only — the
         // client-bound half lives in MimiEffectsModClient, which is the
@@ -61,6 +66,21 @@ public final class MimiEffectsMod {
         modEventBus.addListener(NetworkRegistration::registerCommon);
 
         LOGGER.info("MimiEffects constructed — commands, config and networking registered.");
+    }
+
+    /** Load the track files before the first MIMI note can arrive. */
+    private void onServerStarting(ServerStartingEvent event) {
+        try {
+            java.nio.file.Files.createDirectories(tracksDir());
+            TrackScaffolder.Result scaffold = TrackScaffolder.scaffoldMissingTracks(midiDir(), tracksDir());
+            if (scaffold.created > 0) {
+                LOGGER.info("Created {} MimiEffects track configuration stub(s).", scaffold.created);
+            }
+        } catch (IOException e) {
+            LOGGER.warn("Could not create MimiEffects track configuration stubs.", e);
+        }
+        TrackLoader.loadAll(tracksDir(), TRACK_REGISTRY);
+        LOGGER.info("Loaded {} MimiEffects track configuration(s).", TRACK_REGISTRY.all().size());
     }
 
     /** config/mimieffects/tracks — shared by the reload command and the network save handler. */

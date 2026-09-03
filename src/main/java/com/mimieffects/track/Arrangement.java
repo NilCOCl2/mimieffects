@@ -18,6 +18,9 @@ public class Arrangement {
     /** "ensemble" (only players actively playing) or "all_nearby". Null = use Defaults.affects. */
     public String affects;
 
+    /** Optional explicit recipient groups. Null keeps legacy {@link #affects} behaviour. */
+    public EffectTargets targets;
+
     /** Null = use Defaults.duration_seconds via GlobalConfig. */
     public Integer duration_seconds;
 

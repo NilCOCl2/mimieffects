@@ -8,6 +8,7 @@ import com.mimieffects.network.SaveTrackPayload;
 import com.mimieffects.network.TrackFileDto;
 import com.mimieffects.track.Arrangement;
 import com.mimieffects.track.EffectEntry;
+import com.mimieffects.track.EffectTargets;
 import com.mimieffects.track.MobPurge;
 import com.mimieffects.track.TrackConfig;
 
@@ -77,6 +78,7 @@ public final class TrackEditorScreen extends Screen {
     private Arrangement editingArrangement;
     private final List<InstrumentRow> instrumentRows = new ArrayList<>();
     private final List<EffectRow> effectRows = new ArrayList<>();
+    private final List<EditorLabel> editorLabels = new ArrayList<>();
     private String statusMessage = "";
 
     // Picker overlay state — see openPicker()/buildPickerWidgets().
@@ -110,6 +112,7 @@ public final class TrackEditorScreen extends Screen {
 
     private void rebuild() {
         this.clearWidgets();
+        this.editorLabels.clear();
 
         if (pickerCallback != null) {
             buildPickerWidgets();
@@ -189,6 +192,11 @@ public final class TrackEditorScreen extends Screen {
         }
         if (this.editingArrangement.effects == null) {
             this.editingArrangement.effects = new EffectEntry[0];
+        }
+        if (this.editingArrangement.targets == null) {
+            this.editingArrangement.targets = new EffectTargets();
+            this.editingArrangement.targets.players = !"ensemble".equals(this.editingArrangement.affects);
+            this.editingArrangement.targets.orchestra = "ensemble".equals(this.editingArrangement.affects);
         }
 
         instrumentRows.clear();
@@ -301,29 +309,32 @@ public final class TrackEditorScreen extends Screen {
         int y = startY;
         int fieldW = 220;
 
-        EditBox displayName = new EditBox(this.font, x, y, fieldW, 18, Component.literal("Display name"));
+        addEditorLabel(x, y, "Название трека (показывается в списке)");
+        y += 10;
+        EditBox displayName = new EditBox(this.font, x, y, fieldW, 18, Component.literal("Название трека"));
         displayName.setValue(nullToEmpty(selectedConfig.display_name));
         displayName.setResponder(v -> selectedConfig.display_name = v);
         this.addRenderableWidget(displayName);
         y += 22;
 
-        EditBox arrangementName = new EditBox(this.font, x, y, fieldW, 18, Component.literal("Arrangement name"));
+        addEditorLabel(x, y, "Название аранжировки");
+        y += 10;
+        EditBox arrangementName = new EditBox(this.font, x, y, fieldW, 18, Component.literal("Название аранжировки"));
         arrangementName.setValue(nullToEmpty(editingArrangement.name));
         arrangementName.setResponder(v -> editingArrangement.name = v);
         this.addRenderableWidget(arrangementName);
         y += 22;
 
-        boolean allNearby = !"ensemble".equals(editingArrangement.affects);
-        this.addRenderableWidget(Button.builder(
-                Component.literal("Affects: " + (allNearby ? "all_nearby" : "ensemble")),
-                btn -> {
-                    editingArrangement.affects = allNearby ? "ensemble" : "all_nearby";
-                    rebuild();
-                }
-        ).bounds(x, y, fieldW, 18).build());
-        y += 24;
+        y = renderSectionLabel(x, y, "Кому давать эффект:");
+        EffectTargets targets = editingArrangement.targets;
+        y = addTargetToggle(x, y, "Игроки", targets.players, value -> targets.players = value);
+        y = addTargetToggle(x, y, "Дружелюбные сущности", targets.friendly, value -> targets.friendly = value);
+        y = addTargetToggle(x, y, "Враждебные сущности", targets.hostile, value -> targets.hostile = value);
+        y = addTargetToggle(x, y, "Нейтральные сущности", targets.neutral, value -> targets.neutral = value);
+        y = addTargetToggle(x, y, "Участники оркестра", targets.orchestra, value -> targets.orchestra = value);
+        y += 4;
 
-        y = renderSectionLabel(y, "Instruments (id -> count):");
+        y = renderSectionLabel(x, y, "Инструменты — выберите инструмент и укажите количество:");
         for (int i = 0; i < instrumentRows.size(); i++) {
             InstrumentRow row = instrumentRows.get(i);
             int rowY = y;
@@ -333,7 +344,7 @@ public final class TrackEditorScreen extends Screen {
                     btn -> openPicker(instrumentIds, picked -> row.id = picked)
             ).bounds(x, rowY, 165, 16).build());
 
-            EditBox countBox = new EditBox(this.font, x + 170, rowY, 40, 16, Component.literal("count"));
+            EditBox countBox = new EditBox(this.font, x + 170, rowY, 40, 16, Component.literal("Кол-во"));
             countBox.setValue(row.count);
             countBox.setResponder(v -> row.count = v);
             this.addRenderableWidget(countBox);
@@ -347,14 +358,14 @@ public final class TrackEditorScreen extends Screen {
             y += 19;
         }
         if (instrumentRows.size() < MAX_INSTRUMENTS) {
-            this.addRenderableWidget(Button.builder(Component.literal("+ Add instrument"), btn -> {
+            this.addRenderableWidget(Button.builder(Component.literal("+ Добавить инструмент"), btn -> {
                 instrumentRows.add(new InstrumentRow("", "1"));
                 rebuild();
             }).bounds(x, y, 150, 18).build());
             y += 22;
         }
 
-        y = renderSectionLabel(y, "Effects (id, base, max):");
+        y = renderSectionLabel(x, y, "Эффекты — эффект | базовый уровень | максимум:");
         for (int i = 0; i < effectRows.size(); i++) {
             EffectRow row = effectRows.get(i);
             int rowY = y;
@@ -364,12 +375,12 @@ public final class TrackEditorScreen extends Screen {
                     btn -> openPicker(effectIds, picked -> row.effect = picked)
             ).bounds(x, rowY, 130, 16).build());
 
-            EditBox baseBox = new EditBox(this.font, x + 135, rowY, 30, 16, Component.literal("base"));
+            EditBox baseBox = new EditBox(this.font, x + 135, rowY, 30, 16, Component.literal("База"));
             baseBox.setValue(row.baseLevel);
             baseBox.setResponder(v -> row.baseLevel = v);
             this.addRenderableWidget(baseBox);
 
-            EditBox maxBox = new EditBox(this.font, x + 170, rowY, 30, 16, Component.literal("max"));
+            EditBox maxBox = new EditBox(this.font, x + 170, rowY, 30, 16, Component.literal("Макс."));
             maxBox.setValue(row.maxLevel);
             maxBox.setResponder(v -> row.maxLevel = v);
             this.addRenderableWidget(maxBox);
@@ -383,14 +394,14 @@ public final class TrackEditorScreen extends Screen {
             y += 19;
         }
         if (effectRows.size() < MAX_EFFECTS) {
-            this.addRenderableWidget(Button.builder(Component.literal("+ Add effect"), btn -> {
+            this.addRenderableWidget(Button.builder(Component.literal("+ Добавить эффект"), btn -> {
                 effectRows.add(new EffectRow("", "0", "0"));
                 rebuild();
             }).bounds(x, y, 150, 18).build());
             y += 22;
         }
 
-        y = renderSectionLabel(y, "Mob purge (repel/kill on this track):");
+        y = renderSectionLabel(x, y, "Изгнание мобов для этого трека:");
         boolean purgeEnabled = editingArrangement != null && selectedConfig.mob_purge != null;
         this.addRenderableWidget(Button.builder(
                 Component.literal("Mob purge: " + (purgeEnabled ? "ENABLED" : "disabled")),
@@ -453,10 +464,21 @@ public final class TrackEditorScreen extends Screen {
                 .build());
     }
 
-    private int renderSectionLabel(int y, String ignoredLabelDrawnInRender) {
-        // Labels are drawn in render() (see sectionLabelsY), not as widgets —
-        // this just reserves vertical space consistently at each call site.
+    private int renderSectionLabel(int x, int y, String label) {
+        addEditorLabel(x, y, label);
         return y + 12;
+    }
+
+    private void addEditorLabel(int x, int y, String text) {
+        editorLabels.add(new EditorLabel(x, y, text));
+    }
+
+    private int addTargetToggle(int x, int y, String label, boolean enabled, java.util.function.Consumer<Boolean> setter) {
+        this.addRenderableWidget(Button.builder(Component.literal((enabled ? "[x] " : "[ ] ") + label), btn -> {
+            setter.accept(!enabled);
+            rebuild();
+        }).bounds(x, y, 220, 18).build());
+        return y + 20;
     }
 
     private void save() {
@@ -496,6 +518,9 @@ public final class TrackEditorScreen extends Screen {
     @Override
     public void render(GuiGraphics guiGraphics, int mouseX, int mouseY, float partialTick) {
         super.render(guiGraphics, mouseX, mouseY, partialTick);
+        for (EditorLabel label : editorLabels) {
+            guiGraphics.drawString(this.font, label.text, label.x, label.y, 0xD0D0D0);
+        }
         guiGraphics.drawCenteredString(this.font, this.title, this.width / 2, 8, 0xFFFFFF);
         if (!statusMessage.isEmpty()) {
             guiGraphics.drawString(this.font, statusMessage, 10, this.height - 42, 0xFFFF55);
@@ -540,6 +565,9 @@ public final class TrackEditorScreen extends Screen {
             this.id = id;
             this.count = count;
         }
+    }
+
+    private record EditorLabel(int x, int y, String text) {
     }
 
     private static final class EffectRow {
