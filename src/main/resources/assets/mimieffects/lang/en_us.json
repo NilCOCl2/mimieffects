@@ -16,6 +16,10 @@
   "mimieffects.configuration.defaults.affects": "Default affected group",
   "mimieffects.configuration.defaults.duration_seconds": "Default effect duration (sec)",
 
+  "mimieffects.configuration.protection": "Boss Protection",
+  "mimieffects.configuration.protection.protected_entity_types": "Protected entity types (exact IDs)",
+  "mimieffects.configuration.protection.protected_entity_tags": "Protected entity tags",
+
   "mimieffects.command.reload.success": "[MimiEffects] Tracks loaded: %s. New stubs created: %s.",
   "mimieffects.command.reload.load_failed": "[MimiEffects] Failed to create/read %s: %s",
   "mimieffects.command.reload.scaffold_failed": "[MimiEffects] Auto-scaffolding failed: %s",

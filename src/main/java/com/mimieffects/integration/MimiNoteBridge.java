@@ -82,6 +82,11 @@ public final class MimiNoteBridge {
         }
         final EffectTargets selected = groups;
         return source.serverLevel().getEntitiesOfClass(LivingEntity.class, source.getBoundingBox().inflate(radius), entity -> {
+            // Added 2026-09-04: bosses are exempt from ANY track effect —
+            // positive or negative — regardless of targeting flags, so a
+            // healing track can't be abused to buff a boss fight's outcome
+            // and a harmful one can't cheese a boss kill. See BossProtection.
+            if (BossProtection.isProtected(entity)) return false;
             if (entity == source) return selected.orchestra || selected.players;
             if (entity instanceof ServerPlayer) return selected.players;
             if (entity instanceof Enemy) return selected.hostile;
@@ -98,10 +103,25 @@ public final class MimiNoteBridge {
         if (now - last < Math.max(1, purge.purge_interval_ticks)) return;
         LAST_PURGE_TICK.put(player.getUUID(), now);
         for (LivingEntity entity : level.getEntitiesOfClass(LivingEntity.class, player.getBoundingBox().inflate(purge.radius_blocks))) {
+            // Added 2026-09-04: bosses are never purgeable, full stop —
+            // checked before anything else, independent of environment/
+            // hostile_only settings.
+            if (BossProtection.isProtected(entity)) continue;
             boolean tamed = entity instanceof TamableAnimal animal && animal.isTame();
             if (!MobPurgeMatcher.shouldPurge(entity instanceof ServerPlayer, entity instanceof Enemy, entity.isInWater(), tamed, purge.environment, purge.hostile_only)) continue;
-            if (purge.silent) entity.discard();
-            else entity.hurt(player.damageSources().playerAttack(player), Float.MAX_VALUE);
+            // FIX (2026-09-04): "silent" used to call entity.discard(),
+            // which unconditionally removes the entity WITHOUT going
+            // through LivingEntity#hurt() — that bypasses damage
+            // immunity/invulnerability windows entirely (e.g. a boss's
+            // brief post-spawn invulnerability, or any entity explicitly
+            // flagged invulnerable), which is exactly the kind of
+            // "abuse" vector the user flagged. Always damage through the
+            // normal combat pipeline now, which respects
+            // isInvulnerableTo() and any other vanilla/modded immunity
+            // logic; a finite (not Float.MAX_VALUE) but still massively
+            // lethal amount avoids any theoretical float-overflow edge
+            // case in damage-modifier math further down the pipeline.
+            entity.hurt(player.damageSources().playerAttack(player), 1.0E6F);
         }
     }
 

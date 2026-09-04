@@ -63,10 +63,17 @@ public class MobPurge {
     public int purge_interval_ticks = 20;
 
     /**
-     * true = silent removal (no death animation, sound, drops, XP) —
-     * feels like "the music makes them flee/dissolve" rather than a kill.
-     * false (default) = a normal death (drops, XP, death message) —
-     * still feels earned/lootable, just attributed to the music.
+     * CHANGED (2026-09-04): this used to mean "skip normal death via
+     * entity.discard() instead of hurt()" — that bypassed vanilla damage
+     * immunity/invulnerability entirely (a real abuse vector, since it
+     * could remove even entities explicitly flagged invulnerable). Killing
+     * is now ALWAYS done through the normal damage pipeline
+     * (entity.hurt(...)), no exceptions — see MimiNoteBridge.purgeMobs.
+     * This field is currently inert (kept for schema/JSON compatibility
+     * and a possible future cosmetic-only use — e.g. suppressing the
+     * death sound/particle without touching how the kill itself happens)
+     * rather than removed outright, so existing track JSON files that set
+     * it don't fail to parse.
      */
     public boolean silent = false;
 

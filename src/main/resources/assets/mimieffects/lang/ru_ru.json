@@ -16,6 +16,10 @@
   "mimieffects.configuration.defaults.affects": "Кого охватывать по умолчанию",
   "mimieffects.configuration.defaults.duration_seconds": "Длительность эффекта по умолчанию (сек)",
 
+  "mimieffects.configuration.protection": "Защита боссов",
+  "mimieffects.configuration.protection.protected_entity_types": "Защищённые типы существ (точные ID)",
+  "mimieffects.configuration.protection.protected_entity_tags": "Защищённые теги существ",
+
   "mimieffects.command.reload.success": "[MimiEffects] Загружено треков: %s. Новых заготовок создано: %s.",
   "mimieffects.command.reload.load_failed": "[MimiEffects] Не удалось создать/прочитать %s: %s",
   "mimieffects.command.reload.scaffold_failed": "[MimiEffects] Автосоздание заготовок не удалось: %s",

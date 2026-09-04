@@ -41,6 +41,17 @@ public final class GlobalConfig {
     public static final ModConfigSpec.ConfigValue<String> DEFAULT_AFFECTS;
     public static final ModConfigSpec.IntValue DEFAULT_DURATION_SECONDS;
 
+    // --- [Protection] ---
+    // Added 2026-09-04: server-wide exemption list so bosses can never be
+    // killed by mob_purge NOR healed/harmed by regular track effects
+    // (targets hostile/friendly/etc), regardless of what any individual
+    // track's JSON says. Deliberately GLOBAL, not per-track — a per-track
+    // exclude list is too easy for an admin to forget on any one file;
+    // this way it's enforced everywhere at once. See BossProtection.java
+    // for where this is actually applied.
+    public static final ModConfigSpec.ConfigValue<java.util.List<? extends String>> PROTECTED_ENTITY_TYPES;
+    public static final ModConfigSpec.ConfigValue<java.util.List<? extends String>> PROTECTED_ENTITY_TAGS;
+
     private static final String TR = "mimieffects.configuration.";
 
     static {
@@ -95,6 +106,35 @@ public final class GlobalConfig {
                 .translation(TR + "defaults.duration_seconds")
                 .comment("Длительность эффекта в секундах, если в треке не указано")
                 .defineInRange("duration_seconds", 5, 1, 3600);
+        builder.pop();
+
+        builder.push("Protection");
+        PROTECTED_ENTITY_TYPES = builder
+                .translation(TR + "protection.protected_entity_types")
+                .comment(
+                        "Точные ID типов сущностей, которые НИКОГДА не затрагиваются mob_purge",
+                        "и таргетингом эффектов (hostile/friendly/neutral), независимо от трека.",
+                        "Пример: \"minecraft:ender_dragon\""
+                )
+                .defineList(
+                        "protected_entity_types",
+                        java.util.List.of("minecraft:ender_dragon", "minecraft:wither"),
+                        () -> "minecraft:ender_dragon",
+                        obj -> obj instanceof String
+                );
+        PROTECTED_ENTITY_TAGS = builder
+                .translation(TR + "protection.protected_entity_tags")
+                .comment(
+                        "Теги типов сущностей (без # или с ним — оба варианта приняты),",
+                        "которые тоже никогда не затрагиваются. Пример: \"c:bosses\", если",
+                        "такой тег определён у вас на сервере — мы его не придумываем сами."
+                )
+                .defineListAllowEmpty(
+                        "protected_entity_tags",
+                        java.util.List.of(),
+                        () -> "c:bosses",
+                        obj -> obj instanceof String
+                );
         builder.pop();
 
         SPEC = builder.build();
