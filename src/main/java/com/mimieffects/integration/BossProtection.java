@@ -2,14 +2,7 @@ package com.mimieffects.integration;
 
 import com.mimieffects.config.GlobalConfig;
 
-import net.minecraft.core.registries.BuiltInRegistries;
-import net.minecraft.core.registries.Registries;
-import net.minecraft.resources.ResourceLocation;
-import net.minecraft.tags.TagKey;
-import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.LivingEntity;
-
-import java.util.List;
 
 /**
  * Added 2026-09-04 per user request: bosses must be exempt from BOTH
@@ -21,12 +14,17 @@ import java.util.List;
  * to add to any given file; this way it's enforced everywhere at once,
  * with vanilla's own Ender Dragon and Wither excluded by default.
  *
- * Two independent match mechanisms, both optional:
- * - Exact entity type ID (GlobalConfig.PROTECTED_ENTITY_TYPES)
- * - Entity type tag (GlobalConfig.PROTECTED_ENTITY_TAGS) — lets an admin
- *   protect an entire category (e.g. a modpack-wide "c:bosses" tag) if
- *   one exists on their server, without us having to guess at or
- *   hardcode any particular mod's boss list.
+ * Three independent, combinable checks:
+ * - Exact entity type ID / tag / mod namespace (GlobalConfig.PROTECTED_*),
+ *   via the shared EntityMatchUtil.
+ * - EXTENDED 2026-09-05: max-health threshold
+ *   (GlobalConfig.BOSS_MAX_HEALTH_THRESHOLD). The user's own reasoning:
+ *   a mob whose max health is above some number is functionally a boss
+ *   regardless of what mod added it or whether it implements any
+ *   particular marker interface — and this transparently also catches
+ *   Apotheosis-empowered "apotic invader" vanilla mobs (which get
+ *   massively boosted stats from affixes) without needing any
+ *   Apotheosis-specific integration at all. Set to 0 to disable.
  */
 public final class BossProtection {
 
@@ -34,29 +32,16 @@ public final class BossProtection {
     }
 
     public static boolean isProtected(LivingEntity entity) {
-        ResourceLocation typeId = BuiltInRegistries.ENTITY_TYPE.getKey(entity.getType());
-
-        for (String exact : GlobalConfig.PROTECTED_ENTITY_TYPES.get()) {
-            if (exact != null && exact.equals(typeId.toString())) {
-                return true;
-            }
+        double threshold = GlobalConfig.BOSS_MAX_HEALTH_THRESHOLD.get();
+        if (threshold > 0 && entity.getMaxHealth() >= threshold) {
+            return true;
         }
 
-        for (String tagStr : GlobalConfig.PROTECTED_ENTITY_TAGS.get()) {
-            if (tagStr == null || tagStr.isBlank()) {
-                continue;
-            }
-            String clean = tagStr.startsWith("#") ? tagStr.substring(1) : tagStr;
-            ResourceLocation tagId = ResourceLocation.tryParse(clean);
-            if (tagId == null) {
-                continue;
-            }
-            TagKey<EntityType<?>> tagKey = TagKey.create(Registries.ENTITY_TYPE, tagId);
-            if (entity.getType().is(tagKey)) {
-                return true;
-            }
-        }
-
-        return false;
+        return EntityMatchUtil.matchesAny(
+                entity,
+                GlobalConfig.PROTECTED_ENTITY_TYPES.get(),
+                GlobalConfig.PROTECTED_ENTITY_TAGS.get(),
+                GlobalConfig.PROTECTED_ENTITY_NAMESPACES.get()
+        );
     }
 }

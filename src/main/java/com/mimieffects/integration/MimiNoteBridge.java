@@ -23,7 +23,6 @@ import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.TamableAnimal;
-import net.minecraft.world.entity.monster.Enemy;
 import net.minecraft.world.entity.NeutralMob;
 import net.minecraft.world.effect.MobEffect;
 import net.minecraft.world.effect.MobEffectInstance;
@@ -89,7 +88,10 @@ public final class MimiNoteBridge {
             if (BossProtection.isProtected(entity)) return false;
             if (entity == source) return selected.orchestra || selected.players;
             if (entity instanceof ServerPlayer) return selected.players;
-            if (entity instanceof Enemy) return selected.hostile;
+            // FIX (2026-09-05): was "instanceof Enemy" alone, which missed
+            // several real modded threats (vampires/bats/maggots; Born in
+            // Chaos anglerfish) that don't implement that marker interface.
+            if (EntityHostilityUtil.isHostile(entity)) return selected.hostile;
             if (entity instanceof NeutralMob) return selected.neutral;
             return selected.friendly;
         });
@@ -108,7 +110,7 @@ public final class MimiNoteBridge {
             // hostile_only settings.
             if (BossProtection.isProtected(entity)) continue;
             boolean tamed = entity instanceof TamableAnimal animal && animal.isTame();
-            if (!MobPurgeMatcher.shouldPurge(entity instanceof ServerPlayer, entity instanceof Enemy, entity.isInWater(), tamed, purge.environment, purge.hostile_only)) continue;
+            if (!MobPurgeMatcher.shouldPurge(entity instanceof ServerPlayer, EntityHostilityUtil.isHostile(entity), entity.isInWater(), tamed, purge.environment, purge.hostile_only)) continue;
             // FIX (2026-09-04): "silent" used to call entity.discard(),
             // which unconditionally removes the entity WITHOUT going
             // through LivingEntity#hurt() — that bypasses damage
