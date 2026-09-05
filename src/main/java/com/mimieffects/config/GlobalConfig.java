@@ -51,6 +51,23 @@ public final class GlobalConfig {
     // for where this is actually applied.
     public static final ModConfigSpec.ConfigValue<java.util.List<? extends String>> PROTECTED_ENTITY_TYPES;
     public static final ModConfigSpec.ConfigValue<java.util.List<? extends String>> PROTECTED_ENTITY_TAGS;
+    public static final ModConfigSpec.ConfigValue<java.util.List<? extends String>> PROTECTED_ENTITY_NAMESPACES;
+    public static final ModConfigSpec.DoubleValue BOSS_MAX_HEALTH_THRESHOLD;
+
+    // --- [Hostility] ---
+    // Added 2026-09-05: the base "isHostile" check (Enemy marker interface)
+    // misses a lot of real modded threats — many MCreator-built mods (the
+    // user's concrete examples: vampires, bats, maggots; also Born in
+    // Chaos's anglerfish underwater) don't bother implementing Enemy even
+    // though they're clearly hostile. Three admin-configurable, additive
+    // ways to widen "hostile" beyond Enemy + MobCategory.MONSTER (the new
+    // built-in fallback — see EntityHostilityUtil): exact type, tag, or
+    // (most useful in practice) a whole mod namespace treated as entirely
+    // hostile. Namespaces default to the two mods the user explicitly
+    // named as all-hostile-creature packs — never guessed beyond that.
+    public static final ModConfigSpec.ConfigValue<java.util.List<? extends String>> EXTRA_HOSTILE_TYPES;
+    public static final ModConfigSpec.ConfigValue<java.util.List<? extends String>> EXTRA_HOSTILE_TAGS;
+    public static final ModConfigSpec.ConfigValue<java.util.List<? extends String>> EXTRA_HOSTILE_NAMESPACES;
 
     private static final String TR = "mimieffects.configuration.";
 
@@ -133,6 +150,64 @@ public final class GlobalConfig {
                         "protected_entity_tags",
                         java.util.List.of(),
                         () -> "c:bosses",
+                        obj -> obj instanceof String
+                );
+        PROTECTED_ENTITY_NAMESPACES = builder
+                .translation(TR + "protection.protected_entity_namespaces")
+                .comment(
+                        "Все сущности из этих модов (по modid) никогда не затрагиваются.",
+                        "Пусто по умолчанию — заполните, если у вас есть мод, где ВСЕ",
+                        "существа — боссы (редкость; обычно лучше protected_entity_types)."
+                )
+                .defineListAllowEmpty(
+                        "protected_entity_namespaces",
+                        java.util.List.of(),
+                        () -> "modid",
+                        obj -> obj instanceof String
+                );
+        BOSS_MAX_HEALTH_THRESHOLD = builder
+                .translation(TR + "protection.boss_max_health_threshold")
+                .comment(
+                        "Если максимальное здоровье существа >= этого числа, оно считается",
+                        "боссом и защищается автоматически — ловит в том числе усиленных",
+                        "Apotheosis мобов без отдельной интеграции с этим модом.",
+                        "0 = отключить эту проверку."
+                )
+                .defineInRange("boss_max_health_threshold", 40.0, 0.0, 100000.0);
+        builder.pop();
+
+        builder.push("Hostility");
+        EXTRA_HOSTILE_TYPES = builder
+                .translation(TR + "hostility.extra_hostile_types")
+                .comment("Точные ID сущностей, которые ВСЕГДА считаются враждебными для mob_purge/таргетинга,",
+                        "даже если движок не пометил их как Enemy и не отнёс к категории MONSTER.")
+                .defineListAllowEmpty(
+                        "extra_hostile_types",
+                        java.util.List.of(),
+                        () -> "modid:entity",
+                        obj -> obj instanceof String
+                );
+        EXTRA_HOSTILE_TAGS = builder
+                .translation(TR + "hostility.extra_hostile_tags")
+                .comment("То же самое, но по тегу типа сущности.")
+                .defineListAllowEmpty(
+                        "extra_hostile_tags",
+                        java.util.List.of(),
+                        () -> "c:hostile",
+                        obj -> obj instanceof String
+                );
+        EXTRA_HOSTILE_NAMESPACES = builder
+                .translation(TR + "hostility.extra_hostile_namespaces")
+                .comment(
+                        "Все существа из этих модов (по modid) считаются враждебными.",
+                        "По умолчанию заполнено двумя модами, которые вы явно назвали",
+                        "как \"весь мод — враждебные твари\": Born in Chaos и Nightfall Plague.",
+                        "Уберите значение, если это предположение неверно для вашей сборки."
+                )
+                .defineListAllowEmpty(
+                        "extra_hostile_namespaces",
+                        java.util.List.of("born_in_chaos_v1", "nightfall_plague"),
+                        () -> "modid",
                         obj -> obj instanceof String
                 );
         builder.pop();
