@@ -19,13 +19,6 @@
   "mimieffects.configuration.protection": "Защита боссов",
   "mimieffects.configuration.protection.protected_entity_types": "Защищённые типы существ (точные ID)",
   "mimieffects.configuration.protection.protected_entity_tags": "Защищённые теги существ",
-  "mimieffects.configuration.protection.protected_entity_namespaces": "Защищённые моды (namespace)",
-  "mimieffects.configuration.protection.boss_max_health_threshold": "Порог HP для авто-определения босса",
-
-  "mimieffects.configuration.hostility": "Расширенная враждебность",
-  "mimieffects.configuration.hostility.extra_hostile_types": "Доп. враждебные типы (точные ID)",
-  "mimieffects.configuration.hostility.extra_hostile_tags": "Доп. враждебные теги",
-  "mimieffects.configuration.hostility.extra_hostile_namespaces": "Доп. враждебные моды (namespace)",
 
   "mimieffects.command.reload.success": "[MimiEffects] Загружено треков: %s. Новых заготовок создано: %s.",
   "mimieffects.command.reload.load_failed": "[MimiEffects] Не удалось создать/прочитать %s: %s",

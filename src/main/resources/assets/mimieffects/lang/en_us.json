@@ -19,13 +19,6 @@
   "mimieffects.configuration.protection": "Boss Protection",
   "mimieffects.configuration.protection.protected_entity_types": "Protected entity types (exact IDs)",
   "mimieffects.configuration.protection.protected_entity_tags": "Protected entity tags",
-  "mimieffects.configuration.protection.protected_entity_namespaces": "Protected mods (namespace)",
-  "mimieffects.configuration.protection.boss_max_health_threshold": "Boss auto-detect HP threshold",
-
-  "mimieffects.configuration.hostility": "Extended Hostility",
-  "mimieffects.configuration.hostility.extra_hostile_types": "Extra hostile types (exact IDs)",
-  "mimieffects.configuration.hostility.extra_hostile_tags": "Extra hostile tags",
-  "mimieffects.configuration.hostility.extra_hostile_namespaces": "Extra hostile mods (namespace)",
 
   "mimieffects.command.reload.success": "[MimiEffects] Tracks loaded: %s. New stubs created: %s.",
   "mimieffects.command.reload.load_failed": "[MimiEffects] Failed to create/read %s: %s",
