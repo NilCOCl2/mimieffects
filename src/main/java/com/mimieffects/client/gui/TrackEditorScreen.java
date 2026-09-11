@@ -42,22 +42,18 @@ import java.util.Map;
  *   file by MIMI itself — see REVERSE_ENGINEERING.md — editing it would
  *   just disconnect the track from the song that's supposed to trigger it).
  *
- * ADDED (2026-09-03): instrument/effect IDs are chosen from a picker
- * overlay (search + paged list) populated from the server's own live
- * registries (BuiltInRegistries.ITEM filtered to "mimi", and
- * BuiltInRegistries.MOB_EFFECT) — the same source Minecraft's own command
- * tab-completion would draw from — instead of free-text entry, so a typo
- * can't silently produce a track that never triggers. A "use typed text
- * as-is" escape hatch remains in the picker for the rare case an id isn't
- * in the synced list yet (e.g. a MIMI custom.json addition the running
- * client hasn't seen reflected in a fresh sync).
- *
- * DISCLOSURE: this file could not be compiled or run in the sandbox that
- * built it — no Minecraft/NeoForge classpath was available there (see
- * BUILD.md). Every API used here (Button.builder, EditBox, Screen
- * lifecycle) is long-stable across 1.20–1.21, but if something doesn't
- * compile, the exact javac error is far more useful for fixing it than
- * another guess would be.
+ * FIX (2026-09-06): every UI string is now Component.translatable(key)
+ * with entries in both assets/mimieffects/lang/en_us.json and ru_ru.json,
+ * instead of a mix of hardcoded English (my original literals) and
+ * hardcoded Russian (added later) Component.literal(...) calls. literal()
+ * completely ignores the client's language setting, so the previous mix
+ * showed up as a jumble of both languages regardless of which one the
+ * player's client was set to — this wasn't a translation FILE bug, it
+ * was that most of the screen was never wired to the translation system
+ * at all. Labels drawn directly via GuiGraphics#drawString (not real
+ * Component widgets) are resolved once via Component.translatable(key)
+ * .getString() at the point they're built, which still respects the
+ * client's locale.
  */
 public final class TrackEditorScreen extends Screen {
 
@@ -89,7 +85,7 @@ public final class TrackEditorScreen extends Screen {
     private java.util.function.Consumer<String> pickerCallback;
 
     public TrackEditorScreen(List<TrackFileDto> tracks, List<String> instrumentIds, List<String> effectIds) {
-        super(Component.literal("MimiEffects — Track Editor"));
+        super(Component.translatable("mimieffects.editor.title"));
         this.tracks = tracks;
         this.instrumentIds = instrumentIds != null ? instrumentIds : new ArrayList<>();
         this.effectIds = effectIds != null ? effectIds : new ArrayList<>();
@@ -100,10 +96,9 @@ public final class TrackEditorScreen extends Screen {
         this.tracks = newTracks;
         this.instrumentIds = newInstrumentIds != null ? newInstrumentIds : this.instrumentIds;
         this.effectIds = newEffectIds != null ? newEffectIds : this.effectIds;
-        this.statusMessage = "Saved.";
+        this.statusMessage = Component.translatable("mimieffects.editor.status.saved").getString();
         rebuild();
     }
-
 
     @Override
     protected void init() {
@@ -136,19 +131,19 @@ public final class TrackEditorScreen extends Screen {
 
         int pageY = listY + TRACKS_PER_PAGE * rowHeight + 4;
         if (page > 0) {
-            this.addRenderableWidget(Button.builder(Component.literal("< Prev"), btn -> {
+            this.addRenderableWidget(Button.builder(Component.translatable("mimieffects.editor.prev"), btn -> {
                 page--;
                 rebuild();
             }).bounds(listX, pageY, 75, 18).build());
         }
         if (end < tracks.size()) {
-            this.addRenderableWidget(Button.builder(Component.literal("Next >"), btn -> {
+            this.addRenderableWidget(Button.builder(Component.translatable("mimieffects.editor.next"), btn -> {
                 page++;
                 rebuild();
             }).bounds(listX + 85, pageY, 75, 18).build());
         }
 
-        this.addRenderableWidget(Button.builder(Component.literal("Close"), btn -> this.onClose())
+        this.addRenderableWidget(Button.builder(Component.translatable("mimieffects.editor.close"), btn -> this.onClose())
                 .bounds(listX, this.height - 28, 160, 20)
                 .build());
 
@@ -175,7 +170,7 @@ public final class TrackEditorScreen extends Screen {
         try {
             this.selectedConfig = GSON.fromJson(file.json, TrackConfig.class);
         } catch (JsonSyntaxException e) {
-            this.statusMessage = "This file has invalid JSON and can't be edited here: " + e.getMessage();
+            this.statusMessage = Component.translatable("mimieffects.editor.status.invalid_json", e.getMessage()).getString();
             this.selectedConfig = null;
             rebuild();
             return;
@@ -238,7 +233,7 @@ public final class TrackEditorScreen extends Screen {
         int x = 10;
         int y = 30;
 
-        EditBox search = new EditBox(this.font, x, y, 300, 18, Component.literal("Search"));
+        EditBox search = new EditBox(this.font, x, y, 300, 18, Component.translatable("mimieffects.editor.search"));
         search.setValue(pickerFilter);
         search.setResponder(v -> {
             pickerFilter = v;
@@ -253,7 +248,7 @@ public final class TrackEditorScreen extends Screen {
         // added by a MIMI custom.json this client hasn't seen reflected
         // yet), typing it fully and pressing this still works rather than
         // hard-blocking on the picker.
-        this.addRenderableWidget(Button.builder(Component.literal("Use typed text as-is"), btn -> {
+        this.addRenderableWidget(Button.builder(Component.translatable("mimieffects.editor.use_typed"), btn -> {
             String typed = pickerFilter;
             java.util.function.Consumer<String> cb = pickerCallback;
             pickerCallback = null;
@@ -287,19 +282,19 @@ public final class TrackEditorScreen extends Screen {
 
         int pageY = y + PICKER_PAGE_SIZE * 20 + 4;
         if (pickerPage > 0) {
-            this.addRenderableWidget(Button.builder(Component.literal("< Prev"), btn -> {
+            this.addRenderableWidget(Button.builder(Component.translatable("mimieffects.editor.prev"), btn -> {
                 pickerPage--;
                 rebuild();
             }).bounds(x, pageY, 90, 18).build());
         }
         if (end < filtered.size()) {
-            this.addRenderableWidget(Button.builder(Component.literal("Next >"), btn -> {
+            this.addRenderableWidget(Button.builder(Component.translatable("mimieffects.editor.next"), btn -> {
                 pickerPage++;
                 rebuild();
             }).bounds(x + 100, pageY, 90, 18).build());
         }
 
-        this.addRenderableWidget(Button.builder(Component.literal("Cancel"), btn -> {
+        this.addRenderableWidget(Button.builder(Component.translatable("mimieffects.editor.cancel"), btn -> {
             pickerCallback = null;
             rebuild();
         }).bounds(x, this.height - 28, 100, 20).build());
@@ -309,42 +304,42 @@ public final class TrackEditorScreen extends Screen {
         int y = startY;
         int fieldW = 220;
 
-        addEditorLabel(x, y, "Название трека (показывается в списке)");
+        addEditorLabel(x, y, tr("mimieffects.editor.label.display_name"));
         y += 10;
-        EditBox displayName = new EditBox(this.font, x, y, fieldW, 18, Component.literal("Название трека"));
+        EditBox displayName = new EditBox(this.font, x, y, fieldW, 18, Component.translatable("mimieffects.editor.display_name_placeholder"));
         displayName.setValue(nullToEmpty(selectedConfig.display_name));
         displayName.setResponder(v -> selectedConfig.display_name = v);
         this.addRenderableWidget(displayName);
         y += 22;
 
-        addEditorLabel(x, y, "Название аранжировки");
+        addEditorLabel(x, y, tr("mimieffects.editor.label.arrangement_name"));
         y += 10;
-        EditBox arrangementName = new EditBox(this.font, x, y, fieldW, 18, Component.literal("Название аранжировки"));
+        EditBox arrangementName = new EditBox(this.font, x, y, fieldW, 18, Component.translatable("mimieffects.editor.label.arrangement_name"));
         arrangementName.setValue(nullToEmpty(editingArrangement.name));
         arrangementName.setResponder(v -> editingArrangement.name = v);
         this.addRenderableWidget(arrangementName);
         y += 22;
 
-        y = renderSectionLabel(x, y, "Кому давать эффект:");
+        y = renderSectionLabel(x, y, tr("mimieffects.editor.section.targets"));
         EffectTargets targets = editingArrangement.targets;
-        y = addTargetToggle(x, y, "Игроки", targets.players, value -> targets.players = value);
-        y = addTargetToggle(x, y, "Дружелюбные сущности", targets.friendly, value -> targets.friendly = value);
-        y = addTargetToggle(x, y, "Враждебные сущности", targets.hostile, value -> targets.hostile = value);
-        y = addTargetToggle(x, y, "Нейтральные сущности", targets.neutral, value -> targets.neutral = value);
-        y = addTargetToggle(x, y, "Участники оркестра", targets.orchestra, value -> targets.orchestra = value);
+        y = addTargetToggle(x, y, tr("mimieffects.editor.target.players"), targets.players, value -> targets.players = value);
+        y = addTargetToggle(x, y, tr("mimieffects.editor.target.friendly"), targets.friendly, value -> targets.friendly = value);
+        y = addTargetToggle(x, y, tr("mimieffects.editor.target.hostile"), targets.hostile, value -> targets.hostile = value);
+        y = addTargetToggle(x, y, tr("mimieffects.editor.target.neutral"), targets.neutral, value -> targets.neutral = value);
+        y = addTargetToggle(x, y, tr("mimieffects.editor.target.orchestra"), targets.orchestra, value -> targets.orchestra = value);
         y += 4;
 
-        y = renderSectionLabel(x, y, "Инструменты — выберите инструмент и укажите количество:");
+        y = renderSectionLabel(x, y, tr("mimieffects.editor.section.instruments"));
         for (int i = 0; i < instrumentRows.size(); i++) {
             InstrumentRow row = instrumentRows.get(i);
             int rowY = y;
 
             this.addRenderableWidget(Button.builder(
-                    Component.literal(row.id.isBlank() ? "(choose instrument)" : row.id),
+                    row.id.isBlank() ? Component.translatable("mimieffects.editor.choose_instrument") : Component.literal(row.id),
                     btn -> openPicker(instrumentIds, picked -> row.id = picked)
             ).bounds(x, rowY, 165, 16).build());
 
-            EditBox countBox = new EditBox(this.font, x + 170, rowY, 40, 16, Component.literal("Кол-во"));
+            EditBox countBox = new EditBox(this.font, x + 170, rowY, 40, 16, Component.translatable("mimieffects.editor.count"));
             countBox.setValue(row.count);
             countBox.setResponder(v -> row.count = v);
             this.addRenderableWidget(countBox);
@@ -358,29 +353,29 @@ public final class TrackEditorScreen extends Screen {
             y += 19;
         }
         if (instrumentRows.size() < MAX_INSTRUMENTS) {
-            this.addRenderableWidget(Button.builder(Component.literal("+ Добавить инструмент"), btn -> {
+            this.addRenderableWidget(Button.builder(Component.translatable("mimieffects.editor.add_instrument"), btn -> {
                 instrumentRows.add(new InstrumentRow("", "1"));
                 rebuild();
             }).bounds(x, y, 150, 18).build());
             y += 22;
         }
 
-        y = renderSectionLabel(x, y, "Эффекты — эффект | базовый уровень | максимум:");
+        y = renderSectionLabel(x, y, tr("mimieffects.editor.section.effects"));
         for (int i = 0; i < effectRows.size(); i++) {
             EffectRow row = effectRows.get(i);
             int rowY = y;
 
             this.addRenderableWidget(Button.builder(
-                    Component.literal(row.effect.isBlank() ? "(choose effect)" : row.effect),
+                    row.effect.isBlank() ? Component.translatable("mimieffects.editor.choose_effect") : Component.literal(row.effect),
                     btn -> openPicker(effectIds, picked -> row.effect = picked)
             ).bounds(x, rowY, 130, 16).build());
 
-            EditBox baseBox = new EditBox(this.font, x + 135, rowY, 30, 16, Component.literal("База"));
+            EditBox baseBox = new EditBox(this.font, x + 135, rowY, 30, 16, Component.translatable("mimieffects.editor.base"));
             baseBox.setValue(row.baseLevel);
             baseBox.setResponder(v -> row.baseLevel = v);
             this.addRenderableWidget(baseBox);
 
-            EditBox maxBox = new EditBox(this.font, x + 170, rowY, 30, 16, Component.literal("Макс."));
+            EditBox maxBox = new EditBox(this.font, x + 170, rowY, 30, 16, Component.translatable("mimieffects.editor.max"));
             maxBox.setValue(row.maxLevel);
             maxBox.setResponder(v -> row.maxLevel = v);
             this.addRenderableWidget(maxBox);
@@ -394,17 +389,18 @@ public final class TrackEditorScreen extends Screen {
             y += 19;
         }
         if (effectRows.size() < MAX_EFFECTS) {
-            this.addRenderableWidget(Button.builder(Component.literal("+ Добавить эффект"), btn -> {
+            this.addRenderableWidget(Button.builder(Component.translatable("mimieffects.editor.add_effect"), btn -> {
                 effectRows.add(new EffectRow("", "0", "0"));
                 rebuild();
             }).bounds(x, y, 150, 18).build());
             y += 22;
         }
 
-        y = renderSectionLabel(x, y, "Изгнание мобов для этого трека:");
+        y = renderSectionLabel(x, y, tr("mimieffects.editor.section.mob_purge"));
         boolean purgeEnabled = editingArrangement != null && selectedConfig.mob_purge != null;
         this.addRenderableWidget(Button.builder(
-                Component.literal("Mob purge: " + (purgeEnabled ? "ENABLED" : "disabled")),
+                Component.translatable("mimieffects.editor.mob_purge_toggle",
+                        tr(purgeEnabled ? "mimieffects.editor.enabled" : "mimieffects.editor.disabled")),
                 btn -> {
                     selectedConfig.mob_purge = purgeEnabled ? null : new MobPurge();
                     rebuild();
@@ -415,14 +411,14 @@ public final class TrackEditorScreen extends Screen {
         if (purgeEnabled) {
             MobPurge purge = selectedConfig.mob_purge;
 
-            EditBox radiusBox = new EditBox(this.font, x, y, 80, 16, Component.literal("radius (blocks)"));
+            EditBox radiusBox = new EditBox(this.font, x, y, 80, 16, Component.translatable("mimieffects.editor.radius_blocks"));
             radiusBox.setValue(String.valueOf(purge.radius_blocks));
             radiusBox.setResponder(v -> purge.radius_blocks = parseIntOr(v, purge.radius_blocks));
             this.addRenderableWidget(radiusBox);
 
             int envIndex = indexOf(ENVIRONMENTS, purge.environment);
             this.addRenderableWidget(Button.builder(
-                    Component.literal("Environment: " + purge.environment),
+                    Component.translatable("mimieffects.editor.environment", purge.environment),
                     btn -> {
                         int next = (envIndex + 1) % ENVIRONMENTS.length;
                         purge.environment = ENVIRONMENTS[next];
@@ -432,7 +428,7 @@ public final class TrackEditorScreen extends Screen {
             y += 22;
 
             this.addRenderableWidget(Button.builder(
-                    Component.literal("Static instrument only: " + purge.requires_static_instrument),
+                    Component.translatable("mimieffects.editor.static_only", purge.requires_static_instrument),
                     btn -> {
                         purge.requires_static_instrument = !purge.requires_static_instrument;
                         rebuild();
@@ -441,7 +437,7 @@ public final class TrackEditorScreen extends Screen {
             y += 22;
 
             this.addRenderableWidget(Button.builder(
-                    Component.literal("Hostile only: " + purge.hostile_only),
+                    Component.translatable("mimieffects.editor.hostile_only", purge.hostile_only),
                     btn -> {
                         purge.hostile_only = !purge.hostile_only;
                         rebuild();
@@ -450,7 +446,7 @@ public final class TrackEditorScreen extends Screen {
             y += 22;
 
             this.addRenderableWidget(Button.builder(
-                    Component.literal("Silent: " + purge.silent),
+                    Component.translatable("mimieffects.editor.silent", purge.silent),
                     btn -> {
                         purge.silent = !purge.silent;
                         rebuild();
@@ -459,7 +455,7 @@ public final class TrackEditorScreen extends Screen {
             y += 26;
         }
 
-        this.addRenderableWidget(Button.builder(Component.literal("Save"), btn -> save())
+        this.addRenderableWidget(Button.builder(Component.translatable("mimieffects.editor.save"), btn -> save())
                 .bounds(x, this.height - 28, 100, 20)
                 .build());
     }
@@ -479,6 +475,11 @@ public final class TrackEditorScreen extends Screen {
             rebuild();
         }).bounds(x, y, 220, 18).build());
         return y + 20;
+    }
+
+    /** Resolves a translation key to plain text in the client's current locale, for raw-drawn labels. */
+    private static String tr(String key) {
+        return Component.translatable(key).getString();
     }
 
     private void save() {
@@ -512,7 +513,7 @@ public final class TrackEditorScreen extends Screen {
 
         String json = GSON.toJson(selectedConfig);
         PacketDistributor.sendToServer(new SaveTrackPayload(selectedFileName, json));
-        this.statusMessage = "Saving...";
+        this.statusMessage = Component.translatable("mimieffects.editor.status.saving").getString();
     }
 
     @Override

@@ -69,6 +69,16 @@ public final class GlobalConfig {
     public static final ModConfigSpec.ConfigValue<java.util.List<? extends String>> EXTRA_HOSTILE_TAGS;
     public static final ModConfigSpec.ConfigValue<java.util.List<? extends String>> EXTRA_HOSTILE_NAMESPACES;
 
+    // --- [Debug] ---
+    // Added 2026-09-06 per user request: this exact bug pattern (mob_purge
+    // "just not working" for a reason buried several method calls deep —
+    // unresolved track, no matching arrangement, an instrument/environment
+    // gate, a throttle window) has come up repeatedly and each time took a
+    // manual back-and-forth to diagnose. This makes the mod explain itself.
+    public static final ModConfigSpec.BooleanValue DEBUG_LOGGING;
+    public static final ModConfigSpec.BooleanValue DEBUG_CHAT_FEEDBACK;
+    public static final ModConfigSpec.IntValue DEBUG_THROTTLE_TICKS;
+
     private static final String TR = "mimieffects.configuration.";
 
     static {
@@ -77,26 +87,26 @@ public final class GlobalConfig {
         builder.push("General");
         BASE_RADIUS = builder
                 .translation(TR + "general.base_radius")
-                .comment("Радиус проверки оркестра (блоков)")
+                .comment("Radius of the ensemble detection area (blocks)")
                 .defineInRange("base_radius", 15, 1, 128);
         TICK_INTERVAL = builder
                 .translation(TR + "general.tick_interval")
-                .comment("Как часто Orchestrator обновляет эффекты (тиков, 20 = 1 сек)")
+                .comment("How often the orchestrator updates effects (ticks; 20 = 1 second)")
                 .defineInRange("tick_interval", 100, 20, 1200);
         SESSION_TIMEOUT_SECONDS = builder
                 .translation(TR + "general.session_timeout_seconds")
-                .comment("Через сколько секунд сессия игрока считается мёртвой, если он перестал играть")
+                .comment("Seconds of silence before a player session is considered expired")
                 .defineInRange("session_timeout_seconds", 10, 1, 300);
         builder.pop();
 
         builder.push("Scaling");
         PER_PLAYER_BONUS = builder
                 .translation(TR + "scaling.per_player_bonus")
-                .comment("Бонус к уровню эффекта за каждого дополнительного игрока в оркестре")
+                .comment("Effect level bonus per additional player in the ensemble")
                 .defineInRange("per_player_bonus", 0.25, 0.0, 10.0);
         FULL_ENSEMBLE_BONUS = builder
                 .translation(TR + "scaling.full_ensemble_bonus")
-                .comment("Бонус за полный набор инструментов (все из списка присутствуют)")
+                .comment("Bonus when all required instruments are present")
                 .defineInRange("full_ensemble_bonus", 0.5, 0.0, 10.0);
         builder.pop();
 
@@ -104,24 +114,24 @@ public final class GlobalConfig {
         DISSONANCE_BEHAVIOR = builder
                 .translation(TR + "dissonance.behavior")
                 .comment(
-                        "Что делать, если в одном кластере играют разные треки:",
-                        "\"reduce\" — ослабить эффект, \"cancel\" — не дать вообще, \"ignore\" — всем по отдельности"
+                        "What to do when players in the same cluster play different tracks:",
+                        "\"reduce\" = lower the effect level, \"cancel\" = no effect, \"ignore\" = apply independently"
                 )
                 .define("behavior", "reduce");
         REDUCE_BY_LEVELS = builder
                 .translation(TR + "dissonance.reduce_by_levels")
-                .comment("На сколько уровней понижать при диссонансе (если behavior = reduce)")
+                .comment("How many levels to reduce the effect by on dissonance (behavior = reduce)")
                 .defineInRange("reduce_by_levels", 2, 0, 20);
         builder.pop();
 
         builder.push("Defaults");
         DEFAULT_AFFECTS = builder
                 .translation(TR + "defaults.affects")
-                .comment("Кого охватывать, если в треке не указано: \"ensemble\" или \"all_nearby\"")
+                .comment("Who to affect when not specified in the track: \"ensemble\" or \"all_nearby\"")
                 .define("affects", "all_nearby");
         DEFAULT_DURATION_SECONDS = builder
                 .translation(TR + "defaults.duration_seconds")
-                .comment("Длительность эффекта в секундах, если в треке не указано")
+                .comment("Default effect duration in seconds when not specified in the track")
                 .defineInRange("duration_seconds", 5, 1, 3600);
         builder.pop();
 
@@ -129,9 +139,9 @@ public final class GlobalConfig {
         PROTECTED_ENTITY_TYPES = builder
                 .translation(TR + "protection.protected_entity_types")
                 .comment(
-                        "Точные ID типов сущностей, которые НИКОГДА не затрагиваются mob_purge",
-                        "и таргетингом эффектов (hostile/friendly/neutral), независимо от трека.",
-                        "Пример: \"minecraft:ender_dragon\""
+                        "Exact entity type IDs that are NEVER affected by mob_purge",
+                        "or effect targeting (hostile/friendly/neutral), regardless of track config.",
+                        "Example: \"minecraft:ender_dragon\""
                 )
                 .defineList(
                         "protected_entity_types",
@@ -142,9 +152,9 @@ public final class GlobalConfig {
         PROTECTED_ENTITY_TAGS = builder
                 .translation(TR + "protection.protected_entity_tags")
                 .comment(
-                        "Теги типов сущностей (без # или с ним — оба варианта приняты),",
-                        "которые тоже никогда не затрагиваются. Пример: \"c:bosses\", если",
-                        "такой тег определён у вас на сервере — мы его не придумываем сами."
+                        "Entity type tags (with or without leading # — both accepted).",
+                        "Entities matching any tag here are never affected.",
+                        "Example: \"c:bosses\" if that tag is defined on your server."
                 )
                 .defineListAllowEmpty(
                         "protected_entity_tags",
@@ -155,9 +165,9 @@ public final class GlobalConfig {
         PROTECTED_ENTITY_NAMESPACES = builder
                 .translation(TR + "protection.protected_entity_namespaces")
                 .comment(
-                        "Все сущности из этих модов (по modid) никогда не затрагиваются.",
-                        "Пусто по умолчанию — заполните, если у вас есть мод, где ВСЕ",
-                        "существа — боссы (редкость; обычно лучше protected_entity_types)."
+                        "All entities from these mods (by modid) are never affected.",
+                        "Empty by default — use if you have a mod where ALL",
+                        "creatures are bosses (rare; usually protected_entity_types is more precise)."
                 )
                 .defineListAllowEmpty(
                         "protected_entity_namespaces",
@@ -168,19 +178,19 @@ public final class GlobalConfig {
         BOSS_MAX_HEALTH_THRESHOLD = builder
                 .translation(TR + "protection.boss_max_health_threshold")
                 .comment(
-                        "Если максимальное здоровье существа >= этого числа, оно считается",
-                        "боссом и защищается автоматически — ловит в том числе усиленных",
-                        "Apotheosis мобов без отдельной интеграции с этим модом.",
-                        "0 = отключить эту проверку."
+                        "If an entity's max health is >= this value, it is treated as a boss",
+                        "and protected automatically. Also catches health-buffed",
+                        "Apotheosis mobs without any Apotheosis-specific integration.",
+                        "0 = disable this check."
                 )
-                .defineInRange("boss_max_health_threshold", 40.0, 0.0, 100000.0);
+                .defineInRange("boss_max_health_threshold", 200.0, 0.0, 100000.0);
         builder.pop();
 
         builder.push("Hostility");
         EXTRA_HOSTILE_TYPES = builder
                 .translation(TR + "hostility.extra_hostile_types")
-                .comment("Точные ID сущностей, которые ВСЕГДА считаются враждебными для mob_purge/таргетинга,",
-                        "даже если движок не пометил их как Enemy и не отнёс к категории MONSTER.")
+                .comment("Exact entity type IDs that are ALWAYS treated as hostile for mob_purge/targeting,",
+                        "even if not marked as Enemy or in category MONSTER by the engine.")
                 .defineListAllowEmpty(
                         "extra_hostile_types",
                         java.util.List.of(),
@@ -189,7 +199,7 @@ public final class GlobalConfig {
                 );
         EXTRA_HOSTILE_TAGS = builder
                 .translation(TR + "hostility.extra_hostile_tags")
-                .comment("То же самое, но по тегу типа сущности.")
+                .comment("Same as above but matched by entity type tag.")
                 .defineListAllowEmpty(
                         "extra_hostile_tags",
                         java.util.List.of(),
@@ -199,10 +209,9 @@ public final class GlobalConfig {
         EXTRA_HOSTILE_NAMESPACES = builder
                 .translation(TR + "hostility.extra_hostile_namespaces")
                 .comment(
-                        "Все существа из этих модов (по modid) считаются враждебными.",
-                        "По умолчанию заполнено двумя модами, которые вы явно назвали",
-                        "как \"весь мод — враждебные твари\": Born in Chaos и Nightfall Plague.",
-                        "Уберите значение, если это предположение неверно для вашей сборки."
+                        "All entities from these mods (by modid) are treated as hostile.",
+                        "Defaults to Born in Chaos (born_in_chaos_v1) and Nightfall Plague (nightfall_plague),",
+                        "both explicitly named as all-hostile-creature packs. Remove any entry that is wrong for your modpack."
                 )
                 .defineListAllowEmpty(
                         "extra_hostile_namespaces",
@@ -210,6 +219,26 @@ public final class GlobalConfig {
                         () -> "modid",
                         obj -> obj instanceof String
                 );
+        builder.pop();
+
+        builder.push("Debug");
+        DEBUG_LOGGING = builder
+                .translation(TR + "debug.debug_logging")
+                .comment(
+                        "Logs a step-by-step trace of every note event's journey through the mod",
+                        "(player found? track resolved? arrangement matched? mob_purge fired, and why/why not)",
+                        "to the server log. Turn this on when something 'just doesn't work' instead of",
+                        "guessing — the trace names the exact step where it stopped."
+                )
+                .define("debug_logging", false);
+        DEBUG_CHAT_FEEDBACK = builder
+                .translation(TR + "debug.debug_chat_feedback")
+                .comment("Also sends the same trace as a chat message to the player who triggered it (only useful with debug_logging on).")
+                .define("debug_chat_feedback", false);
+        DEBUG_THROTTLE_TICKS = builder
+                .translation(TR + "debug.debug_throttle_ticks")
+                .comment("Minimum ticks between debug traces PER PLAYER, so a fast song doesn't flood the log/chat with one line per note.")
+                .defineInRange("debug_throttle_ticks", 20, 0, 1200);
         builder.pop();
 
         SPEC = builder.build();

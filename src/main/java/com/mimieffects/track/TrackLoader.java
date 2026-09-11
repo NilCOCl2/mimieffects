@@ -48,6 +48,20 @@ public final class TrackLoader {
                         logWarn(file, "file is empty or parsed to null, skipping");
                         continue;
                     }
+                    // ADDED 2026-09-06: this exact class of bug has hit
+                    // twice now — a track_id left as a copy-pasted
+                    // placeholder (e.g. "REPLACE_WITH_REAL_FILEID_UUID")
+                    // silently never matches anything, since real track
+                    // ids are UUIDs computed by MIMI itself. Fail loud
+                    // instead of silently doing nothing at runtime.
+                    if (config.track_id != null && !isValidUuid(config.track_id)) {
+                        logWarn(file, "track_id \"" + config.track_id + "\" is not a valid UUID — "
+                                + "this track will NEVER match a real song and its effects/mob_purge "
+                                + "will never trigger. Real track_id values are generated automatically "
+                                + "by TrackScaffolder once the matching .mid file exists in "
+                                + "config/mimi/server_midi_files/ and you run /mimieffects reload.");
+                        continue;
+                    }
                     registry.register(config);
                     loaded++;
                 } catch (JsonSyntaxException e) {
@@ -61,6 +75,15 @@ public final class TrackLoader {
         }
 
         return loaded;
+    }
+
+    private static boolean isValidUuid(String s) {
+        try {
+            java.util.UUID.fromString(s);
+            return true;
+        } catch (IllegalArgumentException e) {
+            return false;
+        }
     }
 
     private static void logWarn(Path file, String message) {
