@@ -9,6 +9,17 @@ public class EffectEntry {
     public int base_level;
     public int max_level;
 
+    /**
+     * ADDED 2026-09-12 (user request): lets ONE arrangement layer effects
+     * by ensemble size — e.g. effect #1 with min_ensemble_size=1 (always
+     * on, and already grows stronger with more players via
+     * EffectCalculator's per-player bonus) plus effect #2 with
+     * min_ensemble_size=2 that only joins in once a second player shows
+     * up. Default 1 = always included once the arrangement itself matches,
+     * so existing tracks (no such field in their JSON) are unaffected.
+     */
+    public int min_ensemble_size = 1;
+
     public EffectEntry() {
         // for Gson
     }

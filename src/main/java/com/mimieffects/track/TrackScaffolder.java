@@ -34,7 +34,7 @@ import java.util.Set;
  * a ResourceLocation "mimi:midi/<file>.mid" — confirmed false by reading
  * MIMI's source: it's UUID.nameUUIDFromBytes over
  * "file:<name>;tempo:<bpm>;length:<sec>;channels:<mapping>;". See
- * REVERSE_ENGINEERING.md §3-4 for the full trace.
+ * INTEGRATION.md for the full trace.
  *
  * Requires MIMI as a compile-time dependency (already planned in
  * build.gradle) since it calls MIMI's class directly instead of
@@ -108,7 +108,7 @@ public final class TrackScaffolder {
                     continue;
                 }
 
-                writeStub(stubPath, trackId, baseName);
+                writeStub(stubPath, trackId, baseName, fileName);
                 created.add(stubPath.getFileName().toString());
             }
         }
@@ -148,10 +148,12 @@ public final class TrackScaffolder {
         return ids;
     }
 
-    private static void writeStub(Path stubPath, String trackId, String displayNameGuess) throws IOException {
+    private static void writeStub(Path stubPath, String trackId, String displayNameGuess, String rawFileName) throws IOException {
         TrackConfig stub = new TrackConfig();
         stub.track_id = trackId;
         stub.display_name = humanize(displayNameGuess);
+        // ADDED 2026-09-12: raw, un-humanized — see TrackConfig.midi_file_name's javadoc for why this has to be captured now rather than derived later.
+        stub.midi_file_name = rawFileName;
 
         Arrangement placeholder = new Arrangement();
         placeholder.name = "TODO: rename me";

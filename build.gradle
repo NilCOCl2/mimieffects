@@ -17,6 +17,26 @@ base {
 
 java.toolchain.languageVersion = JavaLanguageVersion.of(21)
 
+// FIX (2026-09-13, user report): neoforge.mods.toml's version field is
+// "${file.jarVersion}", which NeoForge resolves by reading
+// Implementation-Version back out of the built jar's own manifest — the
+// jar task doesn't set that by default, and the mods.toml token has no
+// other fallback. Without it, the in-game Mods screen showed the mod's
+// version as the literal placeholder text "0.0NONE" instead of the real
+// mod_version from gradle.properties.
+tasks.named('jar', Jar).configure {
+    manifest {
+        attributes([
+                'Specification-Title'   : mod_name,
+                'Specification-Vendor'  : mod_authors,
+                'Specification-Version' : '1',
+                'Implementation-Title'  : mod_name,
+                'Implementation-Version': project.version,
+                'Implementation-Vendor' : mod_authors,
+        ])
+    }
+}
+
 // FIX (2026-09-01): без этого javac на Windows компилирует .java-файлы в
 // системной кодировке (обычно CP1251/CP1252), а не UTF-8 — кириллица в
 // строковых литералах (сообщения команд, комментарии) превращается в

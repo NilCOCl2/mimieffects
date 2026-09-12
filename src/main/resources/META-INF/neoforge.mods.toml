@@ -9,12 +9,12 @@ config = "mimieffects.mixins.json"
 [[mods]]
 modId = "mimieffects"
 version = "${file.jarVersion}"
-displayName = "MimiEffects"
+displayName = "MIMI Effects"
 description = '''
-Аддон к MIMI: превращает совместную игру на инструментах в баффы для
-окружающих игроков, в зависимости от MIDI-трека и состава "оркестра".
+An addon for MIMI: turns playing instruments together into buffs for
+nearby players, depending on the MIDI track and the "ensemble" makeup.
 '''
-authors = "TBD"
+authors = "Nil"
 
 [[dependencies.mimieffects]]
     modId = "neoforge"

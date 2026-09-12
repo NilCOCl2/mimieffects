@@ -6,6 +6,9 @@ import com.google.gson.GsonBuilder;
 import com.mimieffects.network.TrackFileDto;
 import com.mimieffects.network.TracksSyncPayload;
 
+import io.github.tofodroid.mods.mimi.common.config.instrument.InstrumentConfig;
+import io.github.tofodroid.mods.mimi.common.config.instrument.InstrumentSpec;
+
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.resources.ResourceLocation;
 
@@ -53,21 +56,29 @@ public final class TrackSyncUtil {
     }
 
     /**
-     * Every item registered under the "mimi" namespace. Instruments are
-     * ordinary registered Items in MIMI (both handheld and block
-     * instruments have an Item form — blocks need one to be placeable) —
-     * see REVERSE_ENGINEERING.md §6 for how this matches MIMI's own
-     * data/mimi/instruments/*.json registry. Using the live Item registry
-     * instead of hand-copying that list means it automatically reflects
-     * whatever MIMI version + custom.json additions are actually loaded
-     * on this server, not a snapshot from whenever we last read the source.
+     * FIX (2026-09-13, user report): this used to be "every item registered
+     * under the mimi namespace", on the assumption that MIMI only puts
+     * instruments there. Wrong — MIMI also registers non-instrument
+     * infrastructure under the same namespace (the ledcube_a..h decorative
+     * blocks the user spotted, plus broadcaster/receiver/relay/transmitter/
+     * switchboard/sourcelinker/filecaster's radio-network blocks,
+     * conductor/listener/mechanicalmaestro/tuningtable/effectemitter/
+     * settingssync), so a track could end up "requiring" a decorative LED
+     * cube to unlock its effects.
+     *
+     * MIMI's own InstrumentConfig.getAllInstruments() (a public static API,
+     * not guessed) is the actual authoritative instrument list — every
+     * InstrumentSpec.registryName here corresponds 1:1 to a real playable
+     * instrument's item id ("mimi:" + registryName), matching
+     * data/mimi/instruments/*.json exactly, verified by reading the real
+     * MIMI 4.2.0 jar rather than assumed. Using the live API instead of
+     * hand-copying that list means it automatically reflects whatever MIMI
+     * version + custom.json additions are actually loaded on this server.
      */
-    private static List<String> availableInstrumentIds() {
+    public static List<String> availableInstrumentIds() {
         List<String> ids = new ArrayList<>();
-        for (ResourceLocation id : BuiltInRegistries.ITEM.keySet()) {
-            if ("mimi".equals(id.getNamespace())) {
-                ids.add(id.toString());
-            }
+        for (InstrumentSpec spec : InstrumentConfig.getAllInstruments()) {
+            ids.add("mimi:" + spec.registryName);
         }
         ids.sort(String::compareTo);
         return ids;

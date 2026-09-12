@@ -1,11 +1,14 @@
 package com.mimieffects.command;
 
 import com.mimieffects.MimiEffectsMod;
+import com.mimieffects.config.GlobalConfig;
+import com.mimieffects.track.ScrollGenerator;
 import com.mimieffects.track.TrackLoader;
 import com.mimieffects.track.TrackScaffolder;
 import com.mimieffects.track.TrackSyncUtil;
 
 import com.mojang.brigadier.CommandDispatcher;
+import com.mojang.brigadier.arguments.IntegerArgumentType;
 import com.mojang.brigadier.exceptions.CommandSyntaxException;
 
 import net.minecraft.commands.CommandSourceStack;
@@ -53,7 +56,96 @@ public final class MimiEffectsCommands {
                         .requires(source -> source.hasPermission(2)) // OP only
                         .then(Commands.literal("reload").executes(MimiEffectsCommands::runReload))
                         .then(Commands.literal("gui").executes(MimiEffectsCommands::runGui))
+                        .then(Commands.literal("genscrolls")
+                                .executes(MimiEffectsCommands::runGenScrolls)
+                                // ADDED 2026-09-13 (user request): "если не
+                                // писать то дефолт, а если число стоит то
+                                // максимум по числу" — caps how many
+                                // effects/instruments/ensemble tiers a
+                                // generated scroll can demand; omitted =
+                                // ScrollGenerator.DEFAULT_MAX_ENSEMBLE_SIZE.
+                                .then(Commands.argument("maxEnsembleSize", IntegerArgumentType.integer(1))
+                                        .executes(MimiEffectsCommands::runGenScrollsWithMax)))
+                        .then(Commands.literal("clearscrolls")
+                                .executes(MimiEffectsCommands::runClearScrollsPrompt)
+                                .then(Commands.literal("confirm").executes(MimiEffectsCommands::runClearScrolls)))
         );
+    }
+
+    /**
+     * ADDED 2026-09-13 (user request): resets every track's generated
+     * instruments/effects/mob_purge back to a blank stub so the set can be
+     * regenerated from scratch — destructive, so it requires the explicit
+     * "confirm" literal rather than firing on the bare command.
+     */
+    private static int runClearScrollsPrompt(com.mojang.brigadier.context.CommandContext<CommandSourceStack> ctx) {
+        ctx.getSource().sendFailure(Component.translatable("mimieffects.command.clearscrolls.confirm_needed"));
+        return 0;
+    }
+
+    private static int runClearScrolls(com.mojang.brigadier.context.CommandContext<CommandSourceStack> ctx) {
+        CommandSourceStack source = ctx.getSource();
+        Path tracksDir = MimiEffectsMod.tracksDir();
+
+        int cleared;
+        try {
+            cleared = ScrollGenerator.clearAll(tracksDir);
+        } catch (IOException e) {
+            source.sendFailure(Component.translatable("mimieffects.command.clearscrolls.failed", e.getMessage()));
+            MimiEffectsMod.LOGGER.error("clearscrolls: failed to reset tracks", e);
+            return 0;
+        }
+
+        int loaded = TrackLoader.loadAll(tracksDir, MimiEffectsMod.TRACK_REGISTRY);
+
+        final int finalCleared = cleared;
+        source.sendSuccess(() -> Component.translatable("mimieffects.command.clearscrolls.success", finalCleared), true);
+
+        return loaded;
+    }
+
+    /**
+     * ADDED 2026-09-12 (user request): auto-fills every still-unconfigured
+     * track stub with a random combination of vanilla buffs + matching
+     * instruments (see ScrollGenerator) instead of requiring the admin to
+     * hand-build each one through the Track Editor.
+     */
+    private static int runGenScrolls(com.mojang.brigadier.context.CommandContext<CommandSourceStack> ctx) {
+        return runGenScrolls(ctx, ScrollGenerator.DEFAULT_MAX_ENSEMBLE_SIZE);
+    }
+
+    private static int runGenScrollsWithMax(com.mojang.brigadier.context.CommandContext<CommandSourceStack> ctx) {
+        return runGenScrolls(ctx, IntegerArgumentType.getInteger(ctx, "maxEnsembleSize"));
+    }
+
+    private static int runGenScrolls(com.mojang.brigadier.context.CommandContext<CommandSourceStack> ctx, int maxEnsembleSize) {
+        CommandSourceStack source = ctx.getSource();
+        Path tracksDir = MimiEffectsMod.tracksDir();
+
+        ScrollGenerator.Result result;
+        try {
+            result = ScrollGenerator.generate(
+                    tracksDir,
+                    TrackSyncUtil.availableInstrumentIds(),
+                    GlobalConfig.PREFER_COMMON_INSTRUMENTS.get(),
+                    maxEnsembleSize
+            );
+        } catch (IOException e) {
+            source.sendFailure(Component.translatable("mimieffects.command.genscrolls.failed", e.getMessage()));
+            MimiEffectsMod.LOGGER.error("genscrolls: failed to scan tracks dir", e);
+            return 0;
+        }
+
+        int loaded = TrackLoader.loadAll(tracksDir, MimiEffectsMod.TRACK_REGISTRY);
+
+        final int finalGenerated = result.generated;
+        final int finalScanned = result.scanned;
+        source.sendSuccess(
+                () -> Component.translatable("mimieffects.command.genscrolls.success", finalGenerated, finalScanned),
+                true
+        );
+
+        return loaded;
     }
 
     private static int runGui(com.mojang.brigadier.context.CommandContext<CommandSourceStack> ctx) throws CommandSyntaxException {
