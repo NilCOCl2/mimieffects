@@ -35,6 +35,17 @@ public class Arrangement {
      */
     public int min_instrument_count = 0;
 
+    /**
+     * ADDED 2026-09-12 (user request): a hard headcount gate, independent
+     * of required_instruments — for a track that should do NOTHING at all
+     * short of a full ensemble, regardless of which instruments make it up.
+     * Null (default) = no gate; existing tracks are unaffected. This is
+     * separate from the per_player_bonus scaling that already rewards
+     * extra players — that one makes solo weaker-but-playable, this one
+     * makes solo (or a too-small group) produce zero effect.
+     */
+    public Integer min_ensemble_size;
+
     public Arrangement() {
         // for Gson
     }

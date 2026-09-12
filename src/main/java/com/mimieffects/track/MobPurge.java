@@ -18,17 +18,35 @@ package com.mimieffects.track;
 public class MobPurge {
 
     /**
-     * Radius in BLOCKS, not chunks. The user said "8 chunks"; 1 chunk = 16
-     * blocks, so 8 chunks = 128. We store blocks here to avoid a silent
-     * unit mix-up anywhere else in the codebase — always convert at the
-     * config-authoring boundary, never downstream.
+     * Radius in BLOCKS, not chunks. Originally 128 (matching the user's
+     * initial "8 chunks" spec, 1 chunk = 16 blocks), lowered to 64
+     * (2026-09-12, user request) — mobs were dying too far away to be
+     * noticed/seen from where the instrument was playing. We store blocks
+     * here to avoid a silent unit mix-up anywhere else in the codebase —
+     * always convert at the config-authoring boundary, never downstream.
      */
-    public int radius_blocks = 128;
+    public int radius_blocks = 64;
+
+    /**
+     * ADDED 2026-09-12 (user request): opt-in ensemble scaling for purge's
+     * reach. Null (default) = radius_blocks is always flat, exactly the
+     * pre-existing behavior for every current track file. Set this to
+     * enable scaling: each additional player in the ensemble adds one more
+     * radius_blocks' worth of reach — effectiveRadius = min(this,
+     * radius_blocks * ensembleSize) — capped at this value. E.g.
+     * radius_blocks=32, max_radius_blocks=128: 1 player=32, 2=64, 3=96,
+     * 4+=128. No separate "players needed to reach max" field — that
+     * number is just max_radius_blocks / radius_blocks. Kept
+     * mandatory-to-opt-in rather than unbounded specifically because an
+     * uncapped purge radius is a real performance risk (see the
+     * entity-count/TPS investigation earlier this session).
+     */
+    public Integer max_radius_blocks;
 
     /**
      * If true (default, matches "статичном инструменте" from the request),
      * this only triggers for a player seated at a block instrument
-     * (TileInstrument via EntitySeat — see REVERSE_ENGINEERING.md §2).
+     * (TileInstrument via EntitySeat — see INTEGRATION.md).
      * Playing the same track on a handheld instrument does NOT purge mobs.
      */
     public boolean requires_static_instrument = true;
@@ -76,6 +94,16 @@ public class MobPurge {
      * it don't fail to parse.
      */
     public boolean silent = false;
+
+    /**
+     * REDESIGNED (2026-09-11, user request): purge no longer one-shots
+     * qualifying mobs — it hurts them for this much, once per
+     * purge_interval_ticks, and they flee in panic in between (see
+     * MimiNoteBridge.purgeMobs). Default kills a vanilla zombie (20 HP) in
+     * about 5 intervals — tune per-track for a faster or slower "the music
+     * is unbearable" death.
+     */
+    public double damage_per_tick = 4.0;
 
     public MobPurge() {
         // for Gson
