@@ -97,6 +97,7 @@ public final class MimiEffectsCommands {
         }
 
         int loaded = TrackLoader.loadAll(tracksDir, MimiEffectsMod.TRACK_REGISTRY);
+        broadcastTrackCache();
 
         final int finalCleared = cleared;
         source.sendSuccess(() -> Component.translatable("mimieffects.command.clearscrolls.success", finalCleared), true);
@@ -137,6 +138,7 @@ public final class MimiEffectsCommands {
         }
 
         int loaded = TrackLoader.loadAll(tracksDir, MimiEffectsMod.TRACK_REGISTRY);
+        broadcastTrackCache();
 
         final int finalGenerated = result.generated;
         final int finalScanned = result.scanned;
@@ -195,6 +197,8 @@ public final class MimiEffectsCommands {
             MimiEffectsMod.LOGGER.warn("reload: scaffolding failed", e);
         }
 
+        broadcastTrackCache();
+
         final int finalLoaded = loadedTracks;
         final int finalScaffolded = scaffolded;
         source.sendSuccess(
@@ -203,5 +207,15 @@ public final class MimiEffectsCommands {
         );
 
         return finalLoaded;
+    }
+
+    /**
+     * ADDED 2026-09-13 (user report, dedicated server): every command that
+     * changes what's in TRACK_REGISTRY needs to push that out to every
+     * connected client's own copy too — see TrackCacheSyncPayload's javadoc
+     * for why a client's registry doesn't just stay in sync on its own.
+     */
+    private static void broadcastTrackCache() {
+        PacketDistributor.sendToAllPlayers(TrackSyncUtil.buildCacheSyncPayload());
     }
 }

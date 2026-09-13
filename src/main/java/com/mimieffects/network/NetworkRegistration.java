@@ -76,6 +76,11 @@ public final class NetworkRegistration {
                     SaveResultPayload.STREAM_CODEC,
                     ClientPayloadHandlers::handleSaveResult
             );
+            registrar.playToClient(
+                    TrackCacheSyncPayload.TYPE,
+                    TrackCacheSyncPayload.STREAM_CODEC,
+                    ClientPayloadHandlers::handleTrackCacheSync
+            );
         } else {
             // Same channels, registered so the server declares them
             // during negotiation — handler is unreachable dead code on
@@ -90,6 +95,12 @@ public final class NetworkRegistration {
             registrar.playToClient(
                     SaveResultPayload.TYPE,
                     SaveResultPayload.STREAM_CODEC,
+                    (payload, context) -> {
+                    }
+            );
+            registrar.playToClient(
+                    TrackCacheSyncPayload.TYPE,
+                    TrackCacheSyncPayload.STREAM_CODEC,
                     (payload, context) -> {
                     }
             );

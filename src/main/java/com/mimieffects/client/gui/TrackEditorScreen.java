@@ -97,6 +97,14 @@ public final class TrackEditorScreen extends Screen {
     // instrumentDisplayName() or effectDisplayName() for a human label.
     private boolean pickerIsInstruments;
 
+    // ADDED 2026-09-13 (tester report): on a small screen (reported at
+    // 1280x800) the editor's content is taller/wider than the window —
+    // scrollOffset shifts the whole editor pane vertically, mouse-wheel
+    // driven; see buildEditorWidgets()/mouseScrolled() and the render()
+    // scissor that hides whatever scrolls past the visible area.
+    private int scrollOffset = 0;
+    private int maxScrollOffset = 0;
+
     public TrackEditorScreen(List<TrackFileDto> tracks, List<String> instrumentIds, List<String> effectIds) {
         super(Component.translatable("mimieffects.editor.title"));
         this.tracks = tracks;
@@ -359,19 +367,8 @@ public final class TrackEditorScreen extends Screen {
     }
 
     private void buildEditorWidgets(int x, int startY) {
-        int y = startY;
+        int y = startY - scrollOffset;
         int fieldW = 220;
-        // FIX (2026-09-13, user report): the Mob Purge section + Save button
-        // used to sit at the bottom of this SAME growing column, so a track
-        // with several instrument/effect rows pushed them low enough to
-        // visually collide with the Save button (pinned to a fixed
-        // this.height - 28). Moved onto their own column, far enough right
-        // to sit in the screen's wide unused margin (same fix already
-        // applied to the track-id copy button and max_radius_blocks field)
-        // — its vertical position no longer depends on how long the left
-        // column gets.
-        int x2 = x + 320;
-        int y2 = startY;
 
         addEditorLabel(x, y, tr("mimieffects.editor.label.display_name"));
         y += 10;
@@ -514,9 +511,25 @@ public final class TrackEditorScreen extends Screen {
             y += 22;
         }
 
-        // --- Right column: ensemble gate + mob_purge + Save — see the
-        // javadoc on x2/y2's declaration for why these moved off the left
-        // column entirely instead of just being reordered within it.
+        // --- Right column: ensemble gate + mob_purge + Save. Normally sits
+        // beside the left column, in the screen's wide unused margin (this
+        // is what stops the Mob Purge section from colliding with a long
+        // instrument/effect list — see the 2026-09-13 fix note in git
+        // history). FIX (2026-09-13, tester report on a 1280x800 screen):
+        // that assumed there's always ~550px of spare width, which isn't
+        // true on a small window — falls back to stacking the right column
+        // BELOW the left one (same x) instead of clipping off the edge of
+        // the screen when there isn't room.
+        int x2;
+        int y2;
+        if (this.width >= x + 320 + fieldW + 20) {
+            x2 = x + 320;
+            y2 = startY - scrollOffset;
+        } else {
+            x2 = x;
+            y2 = y + 6;
+        }
+
         // FIX (2026-09-13, design pass): the section header and the field
         // label used to both say "ансамбль" back to back — reworded the
         // field label so it reads as a continuation, not a repeat.
@@ -607,9 +620,23 @@ public final class TrackEditorScreen extends Screen {
             y2 += 26;
         }
 
+        // FIX (2026-09-13, tester report): used to sit at (x2, height-28) —
+        // fine in two-column mode, but in single-column mode x2 == x, so a
+        // tall Mob Purge section could flow right into this fixed row and
+        // overlap it. Anchored to the screen's bottom-right corner instead
+        // (mirrors Close at the bottom-left) — always clear of in-flow
+        // content and independent of column layout or scroll position.
         this.addRenderableWidget(Button.builder(Component.translatable("mimieffects.editor.save"), btn -> save())
-                .bounds(x2, this.height - 28, 100, 20)
+                .bounds(this.width - 110, this.height - 28, 100, 20)
                 .build());
+
+        // ADDED 2026-09-13 (tester report): how far scrollOffset is allowed
+        // to go — content bottom (whichever column ends up lower) minus
+        // roughly one screen's worth of visible room, floored at 0 (never
+        // scroll into negative/empty space above the content).
+        int contentBottom = Math.max(y, y2) + scrollOffset;
+        maxScrollOffset = Math.max(0, contentBottom - (this.height - 40));
+        scrollOffset = Math.min(scrollOffset, maxScrollOffset);
     }
 
     private int renderSectionLabel(int x, int y, String label) {
@@ -696,14 +723,42 @@ public final class TrackEditorScreen extends Screen {
         // world — busy backgrounds like a bookshelf made text hard to read
         // and the whole screen read as "broken" rather than a real UI.
         guiGraphics.fill(5, 20, this.width - 5, this.height - 8, 0x90101010);
+        // ADDED 2026-09-13 (tester report, small screen): hides whatever
+        // scrollOffset has pushed above/below the visible content area
+        // instead of letting it bleed over the title or off the bottom.
+        guiGraphics.enableScissor(0, 20, this.width, this.height - 8);
         super.render(guiGraphics, mouseX, mouseY, partialTick);
         for (EditorLabel label : editorLabels) {
             guiGraphics.drawString(this.font, label.text, label.x, label.y, 0xD0D0D0);
         }
+        guiGraphics.disableScissor();
         guiGraphics.drawCenteredString(this.font, this.title, this.width / 2, 8, 0xFFFFFF);
         if (!statusMessage.isEmpty()) {
             guiGraphics.drawString(this.font, statusMessage, 10, this.height - 42, 0xFFFF55);
         }
+        // ADDED 2026-09-13 (tester report, 1280x800 screen): a subtle hint
+        // that there's more content — the editor otherwise gives no clue
+        // scrolling is even possible.
+        if (maxScrollOffset > 0) {
+            String hint = tr(scrollOffset < maxScrollOffset ? "mimieffects.editor.scroll_hint" : "mimieffects.editor.scroll_hint_top");
+            guiGraphics.drawString(this.font, hint, this.width - this.font.width(hint) - 10, this.height - 42, 0xA0A0A0);
+        }
+    }
+
+    @Override
+    public boolean mouseScrolled(double mouseX, double mouseY, double scrollX, double scrollY) {
+        // ADDED 2026-09-13 (tester report, small screen): lets the editor
+        // pane scroll vertically when its content is taller than the
+        // window — see buildEditorWidgets()'s scrollOffset/maxScrollOffset.
+        if (selectedConfig != null && maxScrollOffset > 0) {
+            int before = scrollOffset;
+            scrollOffset = Math.max(0, Math.min(maxScrollOffset, scrollOffset - (int) Math.round(scrollY * 16)));
+            if (scrollOffset != before) {
+                rebuild();
+            }
+            return true;
+        }
+        return super.mouseScrolled(mouseX, mouseY, scrollX, scrollY);
     }
 
     @Override

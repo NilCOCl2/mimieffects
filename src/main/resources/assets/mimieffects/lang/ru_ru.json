@@ -135,6 +135,8 @@
   "mimieffects.editor.tooltip.target.hostile": "Давать эффект враждебным существам.",
   "mimieffects.editor.tooltip.target.neutral": "Давать эффект нейтральным существам.",
   "mimieffects.editor.tooltip.target.orchestra": "Давать эффект и другим участникам ансамбля тоже.",
+  "mimieffects.editor.scroll_hint": "Прокрутите вниз ↓",
+  "mimieffects.editor.scroll_hint_top": "Прокрутите вверх ↑",
   "mimieffects.editor.status.saved": "Сохранено.",
   "mimieffects.editor.status.saving": "Сохранение...",
   "mimieffects.editor.status.invalid_json": "Некорректный JSON в этом файле, редактирование недоступно: %s",
