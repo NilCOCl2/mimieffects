@@ -77,6 +77,11 @@ public final class ServerPayloadHandlers {
             // acknowledgement and guarantees the editor reflects exactly
             // what's on disk, not just what the client thinks it sent.
             PacketDistributor.sendToPlayer(player, TrackSyncUtil.buildSyncPayload(tracksDir));
+            // ADDED 2026-09-13 (user report, dedicated server): every OTHER
+            // online player's Note Scroll tooltips/creative tab need to see
+            // this edit too, not just the editor's own screen — see
+            // TrackCacheSyncPayload's javadoc.
+            PacketDistributor.sendToAllPlayers(TrackSyncUtil.buildCacheSyncPayload());
         } catch (IOException e) {
             MimiEffectsMod.LOGGER.error("Failed to save track file {}", resolved, e);
             PacketDistributor.sendToPlayer(player, new SaveResultPayload("mimieffects.editor.error.io"));

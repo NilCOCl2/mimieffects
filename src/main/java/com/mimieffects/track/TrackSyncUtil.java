@@ -3,6 +3,8 @@ package com.mimieffects.track;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 
+import com.mimieffects.MimiEffectsMod;
+import com.mimieffects.network.TrackCacheSyncPayload;
 import com.mimieffects.network.TrackFileDto;
 import com.mimieffects.network.TracksSyncPayload;
 
@@ -53,6 +55,19 @@ public final class TrackSyncUtil {
                 GSON.toJson(availableInstrumentIds()),
                 GSON.toJson(availableEffectIds())
         );
+    }
+
+    /**
+     * ADDED 2026-09-13 (user report, dedicated server): builds the
+     * lightweight, screen-free payload that keeps every connected client's
+     * OWN copy of MimiEffectsMod.TRACK_REGISTRY in sync — see
+     * TrackCacheSyncPayload's javadoc for the full story. Serializes the
+     * already-parsed, already-validated TrackConfig objects currently in
+     * the registry (not a fresh disk read), so what's sent is exactly
+     * what's actually active right now.
+     */
+    public static TrackCacheSyncPayload buildCacheSyncPayload() {
+        return new TrackCacheSyncPayload(GSON.toJson(MimiEffectsMod.TRACK_REGISTRY.all()));
     }
 
     /**

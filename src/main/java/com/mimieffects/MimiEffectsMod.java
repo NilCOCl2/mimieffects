@@ -12,7 +12,9 @@ import com.mimieffects.track.TrackConfig;
 import com.mimieffects.track.TrackLoader;
 import com.mimieffects.track.TrackRegistry;
 import com.mimieffects.track.TrackScaffolder;
+import com.mimieffects.track.TrackSyncUtil;
 
+import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.item.CreativeModeTabs;
 import net.minecraft.world.item.ItemStack;
 import net.neoforged.bus.api.IEventBus;
@@ -22,7 +24,9 @@ import net.neoforged.fml.config.ModConfig;
 import net.neoforged.fml.loading.FMLPaths;
 import net.neoforged.neoforge.common.NeoForge;
 import net.neoforged.neoforge.event.BuildCreativeModeTabContentsEvent;
+import net.neoforged.neoforge.event.entity.player.PlayerEvent;
 import net.neoforged.neoforge.event.server.ServerStartingEvent;
+import net.neoforged.neoforge.network.PacketDistributor;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -68,6 +72,13 @@ public final class MimiEffectsMod {
         // reload" in-game, which was the other missing piece.
         NeoForge.EVENT_BUS.addListener(MimiEffectsCommands::onRegisterCommands);
         NeoForge.EVENT_BUS.addListener(this::onServerStarting);
+        // ADDED 2026-09-13 (user report, dedicated server): a joining
+        // client's OWN copy of TRACK_REGISTRY starts empty and previously
+        // had no way to ever get populated on a real (non-singleplayer)
+        // server — see TrackCacheSyncPayload's javadoc. This is what makes
+        // Note Scroll tooltips and the creative-tab listing actually work
+        // for a real client instead of always reading as unbound/missing.
+        NeoForge.EVENT_BUS.addListener(this::onPlayerLoggedIn);
         // Suppresses XP orb drops (only) from purge kills — see
         // MimiNoteBridge.onExperienceDrop for why (2026-09-11, user
         // request: purge shouldn't double as a passive XP farm).
@@ -118,6 +129,12 @@ public final class MimiEffectsMod {
         LOGGER.info("Loaded {} MimiEffects track configuration(s).", TRACK_REGISTRY.all().size());
     }
 
+    private void onPlayerLoggedIn(PlayerEvent.PlayerLoggedInEvent event) {
+        if (event.getEntity() instanceof ServerPlayer player) {
+            PacketDistributor.sendToPlayer(player, TrackSyncUtil.buildCacheSyncPayload());
+        }
+    }
+
     private void onBuildCreativeTab(BuildCreativeModeTabContentsEvent event) {
         if (event.getTabKey() != CreativeModeTabs.INGREDIENTS) {
             return;
@@ -127,10 +144,12 @@ public final class MimiEffectsMod {
         // per enchantment, instead of one useless unbound stack — an admin
         // can just take the right one instead of hand-typing a track_id.
         // Falls back to a single unbound entry if TRACK_REGISTRY is empty,
-        // which it will be if this fires before any world has ever been
-        // loaded this client session (tracks only load via
-        // ServerStartingEvent) — otherwise the item would be invisible in
-        // creative entirely instead of just less convenient.
+        // which it always is the FIRST time this fires (before any
+        // TrackCacheSyncPayload has arrived — see onPlayerLoggedIn/
+        // ClientPayloadHandlers.handleTrackCacheSync, which forces this tab
+        // to rebuild once real data shows up) — otherwise the item would be
+        // invisible in creative entirely instead of just temporarily less
+        // convenient.
         boolean any = false;
         for (TrackConfig track : MimiEffectsMod.TRACK_REGISTRY.all()) {
             if (track.track_id == null) {

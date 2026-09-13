@@ -4,14 +4,18 @@ import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import com.google.gson.reflect.TypeToken;
 
+import com.mimieffects.MimiEffectsMod;
 import com.mimieffects.client.gui.TrackEditorScreen;
 import com.mimieffects.network.SaveResultPayload;
+import com.mimieffects.network.TrackCacheSyncPayload;
 import com.mimieffects.network.TrackFileDto;
 import com.mimieffects.network.TracksSyncPayload;
+import com.mimieffects.track.TrackConfig;
 
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.network.chat.Component;
+import net.minecraft.world.item.CreativeModeTabs;
 import net.neoforged.neoforge.network.handling.IPayloadContext;
 
 import java.util.List;
@@ -61,6 +65,32 @@ public final class ClientPayloadHandlers {
     public static void handleSaveResult(SaveResultPayload payload, IPayloadContext context) {
         if (context.player() != null) {
             context.player().displayClientMessage(Component.translatable(payload.reason()), false);
+        }
+    }
+
+    /**
+     * ADDED 2026-09-13 (user report, dedicated server): keeps THIS client's
+     * own copy of MimiEffectsMod.TRACK_REGISTRY in sync with the server —
+     * see TrackCacheSyncPayload's javadoc for why this is a separate,
+     * screen-free payload from TracksSyncPayload. Never touches the
+     * current screen.
+     */
+    public static void handleTrackCacheSync(TrackCacheSyncPayload payload, IPayloadContext context) {
+        List<TrackConfig> tracks = GSON.fromJson(
+                payload.tracksJson(),
+                new TypeToken<List<TrackConfig>>() {}.getType()
+        );
+        MimiEffectsMod.TRACK_REGISTRY.clear();
+        for (TrackConfig track : tracks) {
+            MimiEffectsMod.TRACK_REGISTRY.register(track);
+        }
+
+        // Forces the creative tab (Note Scroll's per-track listing) to
+        // recompute NOW instead of staying stuck with whatever it baked in
+        // at login-time, before this payload arrived — see javadoc above.
+        Minecraft mc = Minecraft.getInstance();
+        if (mc.level != null && mc.player != null) {
+            CreativeModeTabs.tryRebuildTabContents(mc.level.enabledFeatures(), mc.player.hasPermissions(2), mc.level.registryAccess());
         }
     }
 }

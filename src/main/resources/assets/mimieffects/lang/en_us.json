@@ -115,6 +115,8 @@
   "mimieffects.editor.tooltip.target.hostile": "Give the effect to hostile entities.",
   "mimieffects.editor.tooltip.target.neutral": "Give the effect to neutral entities.",
   "mimieffects.editor.tooltip.target.orchestra": "Give the effect to other ensemble members too.",
+  "mimieffects.editor.scroll_hint": "Scroll for more ↓",
+  "mimieffects.editor.scroll_hint_top": "Scroll up ↑",
   "mimieffects.editor.status.saved": "Saved.",
   "mimieffects.editor.status.saving": "Saving...",
   "mimieffects.editor.status.invalid_json": "Invalid JSON in this file, can't edit: %s",
